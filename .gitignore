@@ -1,0 +1,6 @@
+node_modules/
+data/posts.json
+data/config.json.bak
+*.log
+.DS_Store
+index.html.bak

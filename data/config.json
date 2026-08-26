@@ -1,0 +1,19 @@
+{
+  "agnesApiKey": "",
+  "base": "https://apihub.agnes-ai.com/v1",
+  "textModel": "agnes-2.5-flash",
+  "imageModel": "agnes-image-2.1-flash",
+  "videoModel": "agnes-video-2.5-flash",
+  "adminUsers": [],
+  "version": "1.0.33",
+  "changelog": [
+    "改进额度显示：进度条+直观剩余量",
+    "优化卡片间距和布局",
+    "改进额度显示：进度条+直观剩余量",
+    "优化卡片间距和布局",
+    "优化卡片间距和布局",
+    "添加过期内容提醒",
+    "添加个人中心页面，展示用户统计和作品网格",
+    "添加个人中心页面、自动清理Cron任务、优化过期提醒"
+  ]
+}

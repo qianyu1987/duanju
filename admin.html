@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7c5cff">
+<title>管理后台 · AI 创作台</title>
+<style>
+:root{
+  --bg:#f4f5fb; --card:#fff; --line:#e7e9f2; --text:#1e2433; --sub:#6b7280; --muted:#9aa1b2;
+  --primary:#7c5cff; --primary2:#9b6bff; --primary-soft:#efeaff;
+  --blue:#3b82f6; --blue-soft:#eaf2ff; --purple:#8b5cf6; --purple-soft:#f3ecff;
+  --pink:#ec4899; --pink-soft:#fdeef6; --orange:#f97316; --orange-soft:#fff1e6;
+  --green:#16a34a; --green-soft:#e9f9ef; --red:#ef4444; --red-soft:#fdecec; --amber:#f59e0b;
+  --radius:16px; --shadow:0 1px 2px rgba(30,36,51,.04),0 8px 24px rgba(30,36,51,.06);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;min-height:100vh}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input{font-family:inherit;font-size:16px;color:var(--text);background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%;outline:none}
+input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(124,92,255,.13)}
+.hidden{display:none!important}
+
+/* 顶栏 */
+.topbar{background:#fff;border-bottom:1px solid var(--line);padding:0 22px;display:flex;align-items:center;gap:14px;height:60px;position:sticky;top:0;z-index:40}
+.topbar .logo-ic{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--primary2));display:flex;align-items:center;justify-content:center}
+.topbar b{font-size:16px}
+.topbar .t-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.badge{display:inline-flex;align-items:center;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px}
+.b-ok{background:var(--green-soft);color:var(--green)}
+
+/* 布局 */
+.wrap{max-width:1080px;margin:0 auto;padding:22px}
+.nav-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.nav-tab{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 18px;font-size:14.5px;font-weight:600;color:var(--sub);min-height:42px}
+.nav-tab:hover{border-color:var(--primary);color:var(--primary)}
+.nav-tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+.card-title{font-size:15.5px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card-title .dot{width:8px;height:8px;border-radius:50%}
+
+/* 统计卡 */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+.stat .num{font-size:26px;font-weight:800;line-height:1.2}
+.stat .lbl{font-size:12.5px;color:var(--sub);margin-top:3px}
+
+/* 表格 */
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{font-size:12px;color:var(--sub);font-weight:700;background:#fafbff}
+tr:last-child td{border-bottom:none}
+.tbl-wrap{overflow-x:auto}
+
+/* 内容列表 */
+.post-item{display:flex;gap:14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:10px;box-shadow:var(--shadow)}
+.post-item .p-thumb{width:86px;height:86px;border-radius:10px;background:#f0f1f6;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.post-item .p-thumb img,.post-item .p-thumb video{width:100%;height:100%;object-fit:cover}
+.post-item .p-thumb .p-txt{font-size:11px;color:var(--muted);padding:6px;text-align:center}
+.post-item .p-main{flex:1;min-width:0}
+.post-item .p-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.post-item .p-prompt{font-size:13.5px;color:var(--sub);margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.post-item .p-ops{align-self:center;flex-shrink:0}
+
+/* 按钮 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:600;border-radius:11px;padding:10px 16px;min-height:42px;border:1px solid transparent}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff}
+.btn-ghost{background:#fff;border-color:var(--line);color:var(--text)}
+.btn-ghost:hover{background:#f6f7fb}
+.btn-danger{background:var(--red-soft);color:var(--red)}
+.btn-sm{min-height:32px;padding:5px 11px;font-size:12.5px;border-radius:9px}
+.btn-icon{min-height:32px;padding:5px 9px;font-size:12.5px;border-radius:9px;color:var(--sub)}
+.btn-icon:hover{background:#f3f4fa;color:var(--text)}
+.btn.block{width:100%}
+
+/* 登录 */
+.login-mask{position:fixed;inset:0;z-index:100;background:linear-gradient(150deg,#f4f5fb,#eae6ff);display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:#fff;border-radius:22px;box-shadow:0 20px 60px rgba(80,60,180,.15);width:100%;max-width:360px;padding:34px 30px}
+.login-card h1{font-size:19px;text-align:center;margin-bottom:6px}
+.login-card .sub{text-align:center;font-size:13px;color:var(--muted);margin-bottom:24px}
+.login-card .field{margin-bottom:14px}
+.login-card label{display:block;font-size:13px;color:var(--sub);font-weight:600;margin-bottom:6px}
+
+/* 趋势图 */
+.trend-wrap{display:flex;align-items:flex-end;gap:4px;height:130px;padding:6px 2px 0}
+.trend-bar{flex:1;background:linear-gradient(180deg,var(--primary),var(--primary2));border-radius:4px 4px 0 0;min-height:2px;position:relative;transition:opacity .2s}
+.trend-bar:hover{opacity:.75}
+.trend-bar .tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(-4px);background:#1e2433;color:#fff;font-size:10.5px;padding:3px 7px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;z-index:5}
+.trend-bar:hover .tip{opacity:1}
+.trend-labels{display:flex;gap:4px;margin-top:4px}
+.trend-labels span{flex:1;font-size:10px;color:var(--muted);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* 模态 */
+.modal-mask{position:fixed;inset:0;background:rgba(20,24,40,.5);z-index:90;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-mask.show{opacity:1;pointer-events:auto}
+.modal{background:#fff;border-radius:18px;max-width:400px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(20,24,40,.2)}
+.modal b{font-size:16.5px;display:block;margin-bottom:8px}
+.modal p{font-size:14px;color:var(--sub);margin-bottom:20px;word-break:break-word}
+.modal .m-ops{display:flex;gap:10px;justify-content:flex-end}
+#toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);background:#1e2433;color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;z-index:120;opacity:0;pointer-events:none;transition:all .25s;max-width:88vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.hist-empty{text-align:center;color:var(--muted);padding:30px 0;font-size:14px}
+@media (max-width:600px){
+  .wrap{padding:14px}
+  .post-item .p-thumb{width:64px;height:64px}
+}
+</style>
+</head>
+<body>
+
+<div class="login-mask hidden" id="loginMask">
+  <div class="login-card">
+    <h1>管理后台</h1>
+    <div class="sub">仅限管理员登录</div>
+    <div class="field"><label>用户名</label><input type="text" id="lgUser" placeholder="管理员用户名" autocomplete="username"></div>
+    <div class="field"><label>密码</label><input type="password" id="lgPass" placeholder="密码" autocomplete="current-password"></div>
+    <button class="btn btn-primary block" id="lgBtn" onclick="doLogin()">登录</button>
+  </div>
+</div>
+
+<header class="topbar hidden" id="topbar">
+  <div class="logo-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z"/></svg></div>
+  <b>创作台 · 管理后台</b> <span data-ver style="font-size:12px;color:var(--muted)">v1.0.1</span>
+  <div class="t-right">
+    <span id="who" style="font-size:13px;color:var(--sub)"></span>
+    <a class="btn btn-ghost btn-sm" href="/" style="text-decoration:none">返回前台</a>
+    <a class="btn btn-ghost btn-sm" href="/api/admin/export" download="backup.json" title="导出全部数据备份">导出备份</a>
+    <button class="btn btn-danger btn-sm" onclick="logout()">退出</button>
+  </div>
+</header>
+
+<div class="wrap hidden" id="app">
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-v="stats">统计看板</button>
+    <button class="nav-tab" data-v="users">用户列表</button>
+    <button class="nav-tab" data-v="posts">内容管理</button>
+    <button class="nav-tab" data-v="messages">留言管理</button>
+    <button class="nav-tab" data-v="channels">渠道管理</button>
+  </div>
+
+  <div id="view-stats">
+    <div class="stat-grid" id="statCards"></div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--primary)"></span>近 30 天生成趋势</div>
+      <div id="trendChart"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--green)"></span>用户生成排行</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>#</th><th>用户名</th><th>文本</th><th>图片</th><th>视频</th><th>短剧</th><th>总数</th></tr></thead>
+        <tbody id="userRank"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div id="view-users" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--blue)"></span>注册用户</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>用户名</th><th>角色</th><th>注册时间</th></tr></thead>
+        <tbody id="userTable"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div id="view-posts" class="hidden">
+    <div class="nav-tabs" id="postFilter">
+      <button class="nav-tab active" data-f="all">全部</button>
+      <button class="nav-tab" data-f="text">文本</button>
+      <button class="nav-tab" data-f="image">图片</button>
+      <button class="nav-tab" data-f="video">视频</button>
+      <button class="nav-tab" data-f="drama">短剧</button>
+      <button class="nav-tab" data-f="post">帖子</button>
+    </div>
+    <div id="postList"></div>
+  </div>
+
+  <div id="view-messages" class="hidden">
+    <div id="msgList"></div>
+  </div>
+
+  <div id="view-channels" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--green)"></span>用户自定义渠道开关</div>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <span style="font-size:14px" id="allowLbl">允许用户在设置中自行添加/管理渠道</span>
+        <button class="btn" id="allowBtn" onclick="toggleAllowUser()" style="min-height:36px;padding:7px 16px">…</button>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="resetPresets()">重置预设渠道</button>
+      </div>
+      <div class="key-hint" style="margin-top:8px;font-size:12px;color:var(--muted)">关闭后普通用户只能使用管理员配置的渠道；开启后用户可添加仅自己可见的自定义渠道（OpenAI 兼容）。</div>
+    </div>
+    <div class="card">
+      <div class="card-title">
+        <span class="dot" style="background:var(--blue)"></span>渠道列表（填入 Key 并启用后即可被生成功能使用）
+        <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="showChannelForm()">+ 新增渠道</button>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>启用</th><th>名称</th><th>类型</th><th>模型</th><th>Base URL</th><th>Key</th><th>操作</th></tr></thead>
+        <tbody id="chTable"></tbody>
+      </table></div>
+    </div>
+    <div class="card" id="chFormCard" style="display:none">
+      <div class="card-title"><span class="dot" style="background:var(--primary)"></span><span id="chFormTitle">新增渠道</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label>渠道名称</label><input id="chName" placeholder="例如：我的 Gemini"></div>
+        <div><label>类型</label>
+          <select id="chKind"><option value="text">文本</option><option value="image">图片</option><option value="video">视频</option></select>
+        </div>
+        <div style="grid-column:1/-1"><label>Base URL（OpenAI 兼容，如 https://api.example.com/v1）</label><input id="chBase" placeholder="https://api.example.com/v1"></div>
+        <div><label>模型名</label><input id="chModel" placeholder="例如：gpt-4o-mini"></div>
+        <div><label>API Key（留空表示不修改）</label><input id="chKey" type="password" placeholder="sk-..."></div>
+        <div><label>适配器（默认自动）</label>
+          <select id="chAdapter">
+            <option value="">自动（按类型）</option>
+            <option value="chat-compat">chat-compat · OpenAI 兼容文本</option>
+            <option value="image-compat">image-compat · OpenAI 兼容图片</option>
+            <option value="video-agnes">video-agnes · Agnes 异步视频</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px"><input type="checkbox" id="chEnabled" checked style="width:auto"><label style="margin:0">立即启用</label></div>
+      </div>
+      <div class="m-ops" style="margin-top:16px">
+        <button class="btn btn-ghost" onclick="hideChannelForm()">取消</button>
+        <button class="btn btn-primary" onclick="saveChannel()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <b id="modalTitle">确认操作</b>
+    <p id="modalMsg">确定要执行此操作吗？</p>
+    <div class="m-ops">
+      <button class="btn btn-ghost" onclick="closeModal()">取消</button>
+      <button class="btn btn-danger" id="modalOkBtn">删除</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+const LS_TOKEN = "wb_aistudio_token";
+let TOKEN = localStorage.getItem(LS_TOKEN) || "";
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2400); }
+function fmtTime(t){ const d=new Date(t); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
+function icon(name,size){ const I={del:'<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>'}; return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(I[name]||"")+"</svg>"; }
+
+async function req(path, opts){
+  opts=opts||{};
+  const headers=Object.assign({},opts.headers||{});
+  if(opts.body!==undefined) headers["Content-Type"]="application/json";
+  if(TOKEN) headers["Authorization"]="Bearer "+TOKEN;
+  const res=await fetch("/api"+path,{method:opts.method||"GET",headers,body:opts.body});
+  let data={}; try{data=await res.json();}catch(e){}
+  if(!res.ok) throw new Error(data.error||("HTTP "+res.status));
+  return data.data;
+}
+
+/* 登录 */
+async function doLogin(){
+  const u=$("#lgUser").value.trim(), p=$("#lgPass").value;
+  if(!u||!p){ toast("请输入用户名和密码"); return; }
+  const btn=$("#lgBtn"); btn.disabled=true; btn.textContent="登录中…";
+  try{
+    const d=await req("/login",{method:"POST",body:JSON.stringify({username:u,password:p})});
+    TOKEN=d.token; localStorage.setItem(LS_TOKEN,TOKEN);
+    if(!d.user.isAdmin){ TOKEN=""; localStorage.removeItem(LS_TOKEN); toast("该账号不是管理员，无法进入后台"); btn.disabled=false; btn.textContent="登录"; return; }
+    enter();
+  }catch(e){ toast(e.message); }
+  btn.disabled=false; btn.textContent="登录";
+}
+function logout(){
+  showModal("退出登录","确定退出管理后台吗？",async()=>{
+    try{await req("/logout",{method:"POST"});}catch(e){}
+    TOKEN=""; localStorage.removeItem(LS_TOKEN);
+    location.reload();
+  });
+}
+async function enter(){
+  $("#loginMask").classList.add("hidden");
+  $("#topbar").classList.remove("hidden");
+  $("#app").classList.remove("hidden");
+  try{
+    const me=await req("/me");
+    $("#who").textContent=me.username+" · 管理员";
+  }catch(e){}
+  try{
+    const v=await req("/version");
+    document.querySelectorAll("[data-ver]").forEach(el=>{ el.textContent="v"+(v.version||"1.0.0"); });
+  }catch(e){}
+  switchView("stats");
+}
+
+/* 视图切换 */
+let view="stats", postFilter="all";
+$$(".nav-tabs").forEach(group=>{
+  group.addEventListener("click",e=>{
+    const tab=e.target.closest(".nav-tab"); if(!tab) return;
+    if(group.id==="postFilter"){ postFilter=tab.dataset.f; $$("#postFilter .nav-tab").forEach(x=>x.classList.remove("active")); tab.classList.add("active"); loadPosts(); return; }
+    if(!group.closest("#view-posts")){
+      $$(".nav-tabs").forEach(g=>{ if(g.id!=="postFilter") g.querySelectorAll(".nav-tab").forEach(x=>x.classList.remove("active")); });
+      tab.classList.add("active");
+      switchView(tab.dataset.v);
+    }
+  });
+});
+function switchView(v){
+  view=v;
+  ["stats","users","posts","messages","channels"].forEach(x=>$("#view-"+x).classList.toggle("hidden",x!==v));
+  if(v==="stats") loadStats();
+  if(v==="users") loadUsers();
+  if(v==="posts") loadPosts();
+  if(v==="messages") loadMessages();
+  if(v==="channels") loadChannelsAdmin();
+}
+
+/* 渠道管理 */
+let chList=[], allowUser=true, chEditing=null;
+async function loadChannelsAdmin(){
+  try{
+    chList=await req("/admin/channels");
+    const st=await req("/admin/settings");
+    allowUser=!!st.allowUserChannels;
+    renderChannelsAdmin();
+  }catch(e){ toast("加载渠道失败："+e.message); }
+}
+function renderChannelsAdmin(){
+  const btn=$("#allowBtn");
+  btn.textContent=allowUser?"✅ 已开启":"⛔ 已关闭";
+  btn.style.background=allowUser?"var(--green-soft)":"var(--red-soft)";
+  btn.style.color=allowUser?"var(--green)":"var(--red)";
+  const kindMeta={text:["文本","var(--blue)"],image:["图片","var(--purple)"],video:["视频","var(--pink)"]};
+  $("#chTable").innerHTML=chList.map(ch=>{
+    const km=kindMeta[ch.kind]||["",""];
+    return '<tr>'+
+      '<td><button class="btn btn-sm" style="min-height:30px;padding:5px 12px;background:'+(ch.enabled?'var(--green-soft)':'#f0f1f6')+';color:'+(ch.enabled?'var(--green)':'var(--muted)')+'" onclick="toggleCh(\''+ch.id+'\')">'+(ch.enabled?'启用中':'已停用')+'</button></td>'+
+      '<td><b>'+esc(ch.name)+'</b>'+(ch.isPreset?' <span class="badge b-ok">预设</span>':' <span class="badge b-ok" style="background:var(--blue-soft);color:var(--blue)">自定义</span>')+'</td>'+
+      '<td><span style="color:'+km[1]+';font-weight:600">'+km[0]+'</span></td>'+
+      '<td style="font-size:12px">'+esc(ch.model)+'</td>'+
+      '<td style="font-size:12px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc((ch.baseUrl||"").replace(/^https?:\/\//,""))+'</td>'+
+      '<td>'+(ch.hasKey?'<span class="badge b-ok">已填</span>':'<span style="color:var(--muted);font-size:12px">未填</span>')+'</td>'+
+      '<td style="white-space:nowrap"><button class="btn-icon" onclick="showChannelForm(\''+ch.id+'\')">编辑</button><button class="btn-icon" style="color:var(--red)" onclick="delCh(\''+ch.id+'\')">删除</button></td>'+
+    '</tr>';
+  }).join("") || '<tr><td colspan="7" class="hist-empty">暂无渠道，点右上角「新增渠道」创建</td></tr>';
+}
+async function toggleAllowUser(){
+  allowUser=!allowUser;
+  try{ await req("/admin/settings",{method:"PATCH",body:JSON.stringify({allowUserChannels:allowUser})}); renderChannelsAdmin(); toast(allowUser?"已开启用户自定义渠道":"已关闭用户自定义渠道"); }
+  catch(e){ allowUser=!allowUser; toast(e.message); }
+}
+async function toggleCh(id){
+  const ch=chList.find(x=>x.id===id); if(!ch) return;
+  ch.enabled=!ch.enabled;
+  try{ await req("/admin/channels/"+id,{method:"PATCH",body:JSON.stringify({enabled:ch.enabled})}); renderChannelsAdmin(); toast(ch.enabled?"已启用「"+ch.name+"」":"已停用「"+ch.name+"」"); }
+  catch(e){ ch.enabled=!ch.enabled; toast(e.message); }
+}
+function showChannelForm(id){
+  const ch=id?chList.find(x=>x.id===id):null;
+  chEditing=ch?ch.id:null;
+  $("#chFormTitle").textContent=ch?"编辑渠道："+ch.name:"新增渠道";
+  $("#chName").value=ch?ch.name:"";
+  $("#chKind").value=ch?ch.kind:"text";
+  $("#chBase").value=ch?ch.baseUrl:"";
+  $("#chModel").value=ch?ch.model:"";
+  $("#chKey").value="";
+  $("#chAdapter").value=ch?(ch.adapter||""):"";
+  $("#chEnabled").checked=ch?!!ch.enabled:true;
+  $("#chFormCard").style.display="block";
+  $("#chFormCard").scrollIntoView({behavior:"smooth"});
+}
+function hideChannelForm(){ $("#chFormCard").style.display="none"; chEditing=null; }
+async function saveChannel(){
+  const body={
+    name:$("#chName").value.trim(),
+    kind:$("#chKind").value,
+    baseUrl:$("#chBase").value.trim(),
+    model:$("#chModel").value.trim(),
+    apiKey:$("#chKey").value.trim(),
+    adapter:$("#chAdapter").value,
+    enabled:$("#chEnabled").checked
+  };
+  if(!body.name||!body.baseUrl||!body.model){ toast("名称 / Base URL / 模型名 必填"); return; }
+  try{
+    if(chEditing){ await req("/admin/channels/"+chEditing,{method:"PATCH",body:JSON.stringify(body)}); toast("已保存"); }
+    else { await req("/admin/channels",{method:"POST",body:JSON.stringify(body)}); toast("已新增渠道"); }
+    hideChannelForm(); loadChannelsAdmin();
+  }catch(e){ toast(e.message); }
+}
+function delCh(id){
+  const ch=chList.find(x=>x.id===id);
+  if(!ch) return;
+  showModal("删除渠道","确定删除渠道「"+ch.name+"」？删除后无法恢复。",async()=>{
+    try{ await req("/admin/channels/"+id,{method:"DELETE"}); toast("已删除"); loadChannelsAdmin(); }
+    catch(e){ toast(e.message); }
+  });
+}
+function resetPresets(){
+  showModal("重置预设渠道","将恢复全部主流预设渠道模板（保留用户自定义渠道，Agnes Key 自动继承当前配置），确定？",async()=>{
+    try{ await req("/admin/channels/reset-presets",{method:"POST"}); toast("已重置预设渠道"); loadChannelsAdmin(); }
+    catch(e){ toast(e.message); }
+  });
+}
+
+/* 统计看板 */
+async function loadStats(){
+  try{
+    const s=await req("/admin/stats");
+    $("#statCards").innerHTML=
+      '<div class="stat"><div class="num" style="color:var(--primary)">'+s.userCount+'</div><div class="lbl">注册用户</div></div>'+
+      '<div class="stat"><div class="num">'+s.postCount+'</div><div class="lbl">总生成数</div></div>'+
+      '<div class="stat"><div class="num" style="color:var(--green)">'+s.doneCount+'</div><div class="lbl">生成成功</div></div>'+
+      '<div class="stat"><div class="num" style="color:var(--red)">'+s.failCount+'</div><div class="lbl">生成失败</div></div>'+
+      '<div class="stat"><div class="num" style="color:var(--amber)">'+s.pendingCount+'</div><div class="lbl">生成中</div></div>'+
+      '<div class="stat"><div class="num" style="color:var(--blue)">'+s.todayCount+'</div><div class="lbl">今日新增</div></div>';
+    // 类型分布
+    const bt=s.byType;
+    const typeHtml=['text','image','video','drama','post'].map(t=>{
+      const meta={text:["文本","var(--blue)"],image:["图片","var(--purple)"],video:["视频","var(--pink)"],drama:["短剧","var(--orange)"],post:["帖子","var(--green)"]}[t];
+      return '<div class="stat"><div class="num" style="color:'+meta[1]+'">'+(bt[t]||0)+'</div><div class="lbl">'+meta[0]+'作品</div></div>';
+    }).join("");
+    $("#statCards").innerHTML += typeHtml;
+    // 趋势
+    renderTrend(s.trend);
+    // 排行
+    const rows=s.byUser.map((u,i)=>
+      '<tr><td>'+(i+1)+'</td><td><b>'+esc(u.username)+'</b></td><td>'+u.text+'</td><td>'+u.image+'</td><td>'+u.video+'</td><td>'+u.drama+'</td><td><b>'+u.total+'</b></td></tr>'
+    ).join("");
+    $("#userRank").innerHTML=rows||'<tr><td colspan="7" class="hist-empty">暂无数据</td></tr>';
+  }catch(e){ toast("加载统计失败："+e.message); }
+}
+function renderTrend(trend){
+  const max=Math.max(1,...trend.map(t=>t.count));
+  const wrap=document.createElement("div");
+  const bars=trend.map(t=>{
+    const h=Math.max(2,Math.round(t.count/max*120));
+    return '<div class="trend-bar" style="height:'+h+'px" title="'+t.date+'：'+t.count+' 条"><span class="tip">'+t.date.replace("2026-","")+' · '+t.count+'</span></div>';
+  }).join("");
+  const labels=trend.filter((_,i)=>i%5===0).map(t=>'<span>'+t.date.slice(5)+'</span>').join("")+trend.slice(-1).map(t=>'<span>'+t.date.slice(5)+'</span>').join("");
+  wrap.innerHTML='<div class="trend-wrap">'+bars+'</div><div class="trend-labels">'+labels+'</div>';
+  $("#trendChart").innerHTML=wrap.innerHTML;
+}
+
+/* 用户列表 */
+async function loadUsers(){
+  try{
+    const users=await req("/admin/users");
+    $("#userTable").innerHTML=users.map(u=>
+      '<tr><td><b>'+esc(u.username)+'</b></td><td>'+(u.isAdmin?'<span class="badge b-ok">管理员</span>':'普通用户')+'</td><td>'+fmtTime(u.createdAt)+'</td></tr>'
+    ).join("")||'<tr><td colspan="3" class="hist-empty">暂无用户</td></tr>';
+  }catch(e){ toast("加载失败："+e.message); }
+}
+
+/* 内容管理 */
+async function loadPosts(){
+  const box=$("#postList");
+  box.innerHTML='<div class="hist-empty">加载中…</div>';
+  try{
+    const d=await req("/admin/posts?type="+postFilter+"&limit=100");
+    const list=d.list;
+    box.innerHTML=list.length?list.map(postAdminHtml).join(""):'<div class="hist-empty">暂无内容</div>';
+  }catch(e){ box.innerHTML='<div class="hist-empty">加载失败：'+esc(e.message)+'</div>'; }
+}
+function postAdminHtml(p){
+  const meta={text:["文本","var(--blue)","b-tag-t"],image:["图片","var(--purple)","b-tag-i"],video:["视频","var(--pink)","b-tag-v"],drama:["短剧","var(--orange)","b-tag-d"],post:["帖子","var(--green)","b-tag-t"]}[p.type]||["","",""];
+  const st=p.status==="done"?'<span class="badge b-ok">完成</span>':p.status==="failed"?'<span style="background:var(--red-soft);color:var(--red);font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px">失败</span>':'<span style="background:#fef5e3;color:var(--amber);font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px">生成中</span>';
+  let thumb='<div class="p-txt">'+meta[0]+'</div>';
+  if(p.type==="image"&&p.result&&(p.result.url||p.result.b64)) thumb='<img src="'+(p.result.url||p.result.b64)+'" alt="">';
+  if(p.type==="video"&&p.result&&p.result.videoUrl) thumb='<video src="'+p.result.videoUrl+'" preload="metadata"></video>';
+  if(p.type==="post"&&p.params&&p.params.media) thumb=p.params.media.kind==="video"?'<video src="'+p.params.media.url+'" preload="metadata"></video>':'<img src="'+p.params.media.url+'" alt="">';
+  return '<div class="post-item">'+
+    '<div class="p-thumb">'+thumb+'</div>'+
+    '<div class="p-main">'+
+      '<div class="p-top"><span class="badge '+meta[2]+'">'+meta[0]+'</span>'+st+'<b style="font-size:13px">'+esc(p.username)+'</b><span style="font-size:12px;color:var(--muted);margin-left:auto">'+fmtTime(p.createdAt)+'</span></div>'+
+      '<div class="p-prompt">'+esc(p.prompt)+'</div>'+
+    '</div>'+
+    '<div class="p-ops"><button class="btn btn-danger btn-sm" onclick="delPost(\''+p.id+'\',\''+esc(p.username)+'\')">'+icon("del",13)+'删除</button></div>'+
+  '</div>';
+}
+function delPost(id){
+  showModal("删除内容","确定删除这条内容吗？将从社区广场永久移除。",async()=>{
+    try{ await req("/admin/posts/"+id,{method:"DELETE"}); loadPosts(); loadStats(); toast("已删除"); }
+    catch(e){ toast(e.message); }
+  });
+}
+
+/* 留言管理 */
+async function loadMessages(){
+  const box=$("#msgList");
+  box.innerHTML='<div class="hist-empty">加载中…</div>';
+  try{
+    const d=await req("/messages?limit=100");
+    const list=d.list;
+    box.innerHTML=list.length?list.map(m=>
+      '<div class="post-item">'+
+        '<div class="p-main">'+
+          '<div class="p-top"><b style="font-size:13px">'+esc(m.username)+'</b><span style="font-size:12px;color:var(--muted);margin-left:auto">'+fmtTime(m.createdAt)+'</span></div>'+
+          '<div class="p-prompt" style="-webkit-line-clamp:3">'+esc(m.content)+'</div>'+
+        '</div>'+
+        '<div class="p-ops"><button class="btn btn-danger btn-sm" onclick="delMsg(\''+m.id+'\')">'+icon("del",13)+'删除</button></div>'+
+      '</div>'
+    ).join(""):'<div class="hist-empty">暂无留言</div>';
+  }catch(e){ box.innerHTML='<div class="hist-empty">加载失败：'+esc(e.message)+'</div>'; }
+}
+function delMsg(id){
+  showModal("删除留言","确定删除这条留言吗？",async()=>{
+    try{ await req("/admin/messages/"+id,{method:"DELETE"}); loadMessages(); toast("已删除"); }
+    catch(e){ toast(e.message); }
+  });
+}
+
+/* 模态 */
+let modalCb=null;
+function showModal(title,msg,cb){ $("#modalTitle").textContent=title; $("#modalMsg").textContent=msg; modalCb=cb; $("#modalMask").classList.add("show"); }
+function closeModal(){ $("#modalMask").classList.remove("show"); modalCb=null; }
+$("#modalOkBtn").addEventListener("click",()=>{ const cb=modalCb; closeModal(); if(cb) cb(); });
+$("#modalMask").addEventListener("click",e=>{ if(e.target.id==="modalMask") closeModal(); });
+$("#lgPass").addEventListener("keydown",e=>{ if(e.key==="Enter") doLogin(); });
+
+/* 初始化 */
+(async function init(){
+  if(TOKEN){
+    try{
+      const me=await req("/me");
+      if(!me.isAdmin) throw new Error("not admin");
+      enter();
+      return;
+    }catch(e){ TOKEN=""; localStorage.removeItem(LS_TOKEN); }
+  }
+  $("#loginMask").classList.remove("hidden");
+})();
+</script>
+</body>
+</html>

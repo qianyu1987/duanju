@@ -1,0 +1,2646 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="oklch(58% 0.18 275)">
+  <meta name="color-scheme" content="light only">
+  <title>AI 创作台 · 文本/图片/视频/短剧</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+:root{
+  /* OKLCH perceptually uniform colors */
+  --bg:#f8f9fc; --card:#ffffff; --line:#e8eaf0; --text:#0f172a; --sub:#475569; --muted:#94a3b8;
+  --primary:oklch(58% 0.18 275); --primary2:oklch(65% 0.15 285); --primary-soft:oklch(92% 0.04 275);
+  --blue:oklch(55% 0.16 250); --blue-soft:oklch(92% 0.04 250);
+  --purple:oklch(55% 0.17 310); --purple-soft:oklch(92% 0.04 310);
+  --pink:oklch(60% 0.18 340); --pink-soft:oklch(93% 0.04 340);
+  --orange:oklch(65% 0.16 40); --orange-soft:oklch(94% 0.04 40);
+  --green:oklch(55% 0.14 150); --green-soft:oklch(93% 0.04 150);
+  --red:oklch(55% 0.16 25); --red-soft:oklch(93% 0.04 25);
+  --amber:oklch(65% 0.16 80); --amber-soft:oklch(94% 0.04 80);
+  /* 4pt spacing system */
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-8:32px; --space-12:48px;
+  --radius:14px; --radius-lg:18px; --shadow-sm:0 1px 2px oklch(0.15 0 0 / 0.05),0 4px 12px oklch(0.15 0 0 / 0.06);
+  --shadow:0 2px 4px oklch(0.15 0 0 / 0.06),0 8px 24px oklch(0.15 0 0 / 0.08);
+  --shadow-lg:0 8px 32px oklch(0.15 0 0 / 0.12);
+  /* Motion */
+  --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+  --duration-fast: 150ms; --duration-normal: 250ms;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;font-weight:450;
+  -webkit-font-smoothing:antialiased;touch-action:manipulation;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{
+  font-family:inherit;font-size:16px;color:var(--text);background:#fff;
+  border:1.5px solid var(--line);border-radius:var(--radius);
+  padding:12px 16px;width:100%;outline:none;
+  transition:border-color var(--duration-fast) var(--ease-out),box-shadow var(--duration-fast) var(--ease-out);
+}
+input:focus,textarea:focus,select:focus{
+  border-color:var(--primary);box-shadow:0 0 0 3px oklch(var(--primary) / 0.15);
+}
+textarea{resize:vertical;line-height:1.7}
+label{display:block;font-size:13px;color:var(--sub);font-weight:600;margin:0 0 var(--space-2)}
+::placeholder{color:var(--muted)}
+.hidden{display:none!important}
+a{color:var(--primary);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* 布局 */
+.app{display:flex;min-height:100vh}
+.sidebar{
+  width:224px;flex-shrink:0;background:#fff;border-right:1px solid var(--line);
+  display:flex;flex-direction:column;padding:var(--space-4) var(--space-3);position:sticky;top:0;height:100vh;
+}
+.side-logo{
+  display:flex;align-items:center;gap:var(--space-3);
+  padding:var(--space-3) var(--space-2) var(--space-4);
+  position:relative;
+}
+.side-logo::after{
+  content:"";position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:60%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--line),transparent);
+}
+.side-logo .logo-ic{
+  width:44px;height:44px;border-radius:14px;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary2) 50%,oklch(70% 0.15 320) 100%);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  box-shadow:0 4px 16px oklch(var(--primary) / 0.3),0 0 0 1px oklch(var(--primary) / 0.1);
+  position:relative;overflow:hidden;
+}
+.side-logo .logo-ic::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.2) 0%,transparent 60%);
+}
+.side-logo .logo-ic svg{position:relative;z-index:1}
+.side-logo b{
+  font-size:18px;letter-spacing:-0.5px;font-weight:800;
+  background:linear-gradient(135deg,var(--text) 0%,oklch(40% 0.02 275) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.side-logo small{
+  display:block;font-size:11px;color:var(--muted);font-weight:500;
+  margin-top:2px;letter-spacing:0.3px;
+}
+.side-nav{flex:1;display:flex;flex-direction:column;gap:var(--space-1)}
+.nav-item{
+  display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-3);
+  border-radius:var(--radius);font-size:14px;color:var(--sub);
+  transition:all var(--duration-fast) var(--ease-out);font-weight:500;text-align:left;width:100%;
+}
+.nav-item svg{flex-shrink:0;transition:transform var(--duration-fast) var(--ease-out)}
+.nav-item:hover{background:var(--primary-soft);color:var(--text)}
+.nav-item:hover svg{transform:scale(1.08)}
+.nav-item.active{background:var(--primary-soft);color:var(--primary);font-weight:700}
+.nav-item.active svg{transform:scale(1.1)}
+.side-foot{padding-top:var(--space-3);border-top:1px solid var(--line);margin-top:var(--space-3)}
+.userbar{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2);border-radius:var(--radius)}
+.userbar .u-avatar{
+  width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--primary2));
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;flex-shrink:0;
+  box-shadow:0 2px 8px oklch(var(--primary) / 0.2);
+}
+.userbar .u-name{font-size:13.5px;font-weight:600;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.userbar .u-sub{font-size:11px;color:var(--muted)}
+.side-foot .u-ops{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);margin-top:var(--space-3)}
+.side-foot .btn{font-size:13px;padding:9px 6px}
+
+.main{flex:1;min-width:0;max-width:980px;margin:0 auto;padding:var(--space-4) var(--space-6) 100px;width:100%}
+
+/* 顶栏（移动） */
+.topbar{display:none}
+
+/* 卡片 */
+.card{
+  background:var(--card);border:0.5px solid oklch(0.92 0.01 260);
+  border-radius:var(--radius-lg);box-shadow:var(--shadow);
+  padding:var(--space-4);margin-bottom:var(--space-4);
+  transition:box-shadow var(--duration-fast) var(--ease-out);
+}
+.card:hover{box-shadow:var(--shadow-lg)}
+
+/* ===== 用户资料卡片 ===== */
+.profile-card{
+  background:linear-gradient(135deg,var(--primary-soft) 0%,var(--purple-soft) 100%);
+  border-radius:20px;
+  padding:var(--space-6);
+  margin-bottom:var(--space-5);
+  display:flex;
+  align-items:center;
+  gap:var(--space-5);
+}
+.profile-avatar{
+  width:72px;height:72px;border-radius:20px;
+  background:linear-gradient(135deg,var(--primary),var(--purple));
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;font-weight:700;color:#fff;
+  flex-shrink:0;
+  box-shadow:0 4px 16px oklch(var(--primary)/0.3);
+}
+.profile-info{flex:1}
+.profile-info h2{font-size:22px;font-weight:700;margin-bottom:4px}
+.profile-info p{font-size:13px;color:var(--sub);margin-bottom:12px}
+.profile-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3)}
+.profile-stat{text-align:center;padding:var(--space-3);background:rgba(255,255,255,0.7);border-radius:14px}
+.profile-stat .num{font-size:24px;font-weight:700;color:var(--primary)}
+.profile-stat .lbl{font-size:11px;color:var(--sub);margin-top:2px}
+
+/* ===== 过期提醒 ===== */
+.expiry-notice{
+  background:linear-gradient(135deg,#fff7ed,#ffedd5);
+  border:1px solid #fed7aa;
+  border-radius:14px;
+  padding:var(--space-4);
+  margin-bottom:var(--space-4);
+  display:flex;align-items:center;gap:var(--space-3);
+}
+.expiry-notice .icon{font-size:24px}
+.expiry-notice .text{flex:1;font-size:13px;color:#9a3412;line-height:1.5}
+.expiry-notice .btn{
+  font-size:12px;padding:6px 14px;
+  background:#fff;border:1px solid #fed7aa;
+  border-radius:8px;color:#c2410c;cursor:pointer;
+}
+.expiry-notice .btn:hover{background:#fff7ed}
+
+/* ===== 优化卡片间距 ===== */
+.card{padding:var(--space-5);margin-bottom:var(--space-5)}
+.card-title{font-size:17px;margin-bottom:var(--space-5);padding-bottom:var(--space-3);border-bottom:1px solid var(--line)}
+.tstat{padding:var(--space-5);border-radius:16px}
+.tstat .num{font-size:32px}
+.today-cards{gap:var(--space-4)}
+.card-title{display:flex;align-items:center;gap:var(--space-2);font-size:16px;font-weight:700;margin-bottom:var(--space-4)}
+.card-title .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+h3.sec{font-size:12px;color:var(--sub);font-weight:700;margin:var(--space-6) 0 var(--space-3);letter-spacing:0.8px;text-transform:uppercase;display:flex;align-items:center;gap:var(--space-2)}
+h3.sec:before{content:"";width:4px;height:14px;border-radius:2px;background:linear-gradient(180deg,var(--primary),var(--primary2))}
+
+/* 按钮 */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  font-size:15px;font-weight:600;border-radius:var(--radius);
+  padding:12px 20px;min-height:44px;
+  transition:all var(--duration-fast) var(--ease-out);
+  border:1.5px solid transparent;
+}
+.btn:active{transform:scale(0.96)}
+.btn-primary{
+  background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;
+  box-shadow:0 4px 14px oklch(var(--primary) / 0.3);
+}
+.btn-primary:hover{
+  box-shadow:0 8px 24px oklch(var(--primary) / 0.35);
+  transform:translateY(-1px);
+}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed;box-shadow:none;transform:none}
+.btn-ghost{background:#fff;border-color:var(--line);color:var(--text)}
+.btn-ghost:hover{background:var(--primary-soft);border-color:oklch(var(--primary) / 0.3);color:var(--primary)}
+.btn-danger{background:var(--red-soft);color:var(--red);border-color:transparent}
+.btn-danger:hover{background:oklch(93% 0.06 25);border-color:var(--red)}
+.btn-sm{min-height:36px;padding:8px 14px;font-size:13px;border-radius:10px}
+.btn-icon{min-height:36px;padding:8px 10px;font-size:13px;border-radius:10px;color:var(--sub)}
+.btn-icon:hover{background:var(--primary-soft);color:var(--primary)}
+/* 表单验证样式 */
+input:invalid:not(:placeholder-shown),
+input[aria-invalid="true"]{border-color:var(--red)}
+input:valid:not(:placeholder-shown){border-color:var(--green)}
+
+/* 按钮禁用状态 */
+button:disabled{cursor:not-allowed;opacity:0.6}
+
+/* 按钮全宽 */
+.btn.block{width:100%}
+
+/* 生成表单 */
+.gen-form .row{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-top:var(--space-3)}
+.gen-form .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-3);margin-top:var(--space-3)}
+.prompt-wrap{position:relative}
+.prompt-wrap .char-count{position:absolute;right:14px;bottom:10px;font-size:11px;color:var(--muted);pointer-events:none}
+.template-chips{display:flex;flex-wrap:wrap;gap:var(--space-2);margin-bottom:var(--space-3)}
+.chip{
+  border:0.5px solid oklch(0.92 0.01 260);background:#fff;border-radius:999px;
+  padding:7px 14px;font-size:13px;color:var(--sub);font-weight:500;
+  min-height:36px;transition:all var(--duration-fast) var(--ease-out);
+}
+.chip:hover{border-color:var(--primary);color:var(--primary);transform:translateY(-1px)}
+.chip.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 2px 8px oklch(var(--primary) / 0.25)}
+
+/* 结果区 */
+.result-box{
+  background:var(--primary-soft);border:1.5px solid oklch(var(--primary) / 0.2);
+  border-radius:var(--radius-lg);padding:var(--space-4);margin-top:var(--space-4);
+  white-space:pre-wrap;word-break:break-word;font-size:14.5px;max-height:420px;overflow:auto;
+}
+.result-actions{display:flex;gap:var(--space-2);margin-top:var(--space-3);flex-wrap:wrap}
+.img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:var(--space-3);margin-top:var(--space-4)}
+.img-card{
+  position:relative;border-radius:var(--radius);overflow:hidden;
+  border:1px solid var(--line);background:#fff;
+  transition:transform var(--duration-fast) var(--ease-out),box-shadow var(--duration-fast) var(--ease-out);
+}
+.img-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.img-card img{width:100%;display:block;aspect-ratio:1/1;object-fit:cover;background:#f0f1f6}
+.img-card .img-ops{
+  position:absolute;inset:auto var(--space-2) var(--space-2) var(--space-2);
+  display:flex;gap:6px;justify-content:flex-end;opacity:0;
+  transition:opacity var(--duration-fast) var(--ease-out);
+}
+.img-card:hover .img-ops{opacity:1}
+.video-wrap{margin-top:var(--space-4)}
+.video-wrap video{width:100%;max-height:420px;border-radius:var(--radius-lg);background:#000;display:block;border:1px solid var(--line)}
+.loading-tip{display:flex;align-items:center;gap:var(--space-3);color:var(--sub);font-size:14px;margin-top:var(--space-4)}
+.spinner{width:18px;height:18px;border:3px solid var(--primary-soft);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 成功动画 */
+@keyframes successPop {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.success-pop { animation: successPop 0.4s var(--ease-out) forwards; }
+
+/* 今天要处理 */
+.today-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3)}
+.tstat{
+  background:#fff;border:0.5px solid oklch(0.92 0.01 260);border-radius:var(--radius);
+  padding:var(--space-3);box-shadow:var(--shadow-sm);
+  transition:all var(--duration-fast) var(--ease-out);
+}
+.tstat:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.tstat .num{font-size:28px;font-weight:800;line-height:1.2;letter-spacing:-0.5px}
+.tstat .lbl{font-size:12px;color:var(--sub);margin-top:var(--space-1);font-weight:500}
+.today-list{display:flex;flex-direction:column;gap:var(--space-3)}
+.t-item{
+  display:flex;align-items:center;gap:var(--space-3);background:#fff;
+  border:0.5px solid oklch(0.92 0.01 260);border-radius:var(--radius);
+  padding:var(--space-3) var(--space-3);box-shadow:var(--shadow-sm);
+  transition:all var(--duration-fast) var(--ease-out);cursor:pointer;
+}
+.t-item:hover{border-color:oklch(var(--primary) / 0.3);box-shadow:var(--shadow)}
+.t-item .t-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.t-item .t-main{flex:1;min-width:0}
+.t-item .t-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-item .t-sub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-item .t-act{display:flex;gap:var(--space-2);flex-shrink:0}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
+.b-ok{background:var(--green-soft);color:var(--green)}
+.b-fail{background:var(--red-soft);color:var(--red)}
+.b-pend{background:var(--amber-soft);color:var(--amber)}
+.b-new{background:var(--blue-soft);color:var(--blue)}
+.b-tag-t{background:var(--blue-soft);color:var(--blue)}
+.b-tag-i{background:var(--purple-soft);color:var(--purple)}
+.b-tag-v{background:var(--pink-soft);color:var(--pink)}
+.b-tag-d{background:var(--orange-soft);color:var(--orange)}
+
+/* 历史 */
+.hist-item{
+  display:flex;gap:var(--space-3);background:#fff;
+  border:0.5px solid oklch(0.92 0.01 260);border-radius:var(--radius);
+  padding:var(--space-3) var(--space-3);margin-bottom:var(--space-2);
+  box-shadow:var(--shadow-sm);cursor:pointer;
+  transition:all var(--duration-fast) var(--ease-out);
+}
+.hist-item:hover{border-color:oklch(var(--primary) / 0.3);transform:translateX(4px)}
+.hist-item .h-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.hist-item .h-main{flex:1;min-width:0}
+.hist-item .h-top{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap}
+.hist-item .h-title{font-size:14px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-item .h-time{font-size:12px;color:var(--muted)}
+.hist-item .h-preview{font-size:13px;color:var(--sub);margin-top:var(--space-1);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hist-item .h-ops{display:flex;gap:var(--space-2);flex-shrink:0;align-items:flex-start}
+.hist-detail{
+  padding:var(--space-4);border-radius:var(--radius);
+  background:var(--primary-soft);border:1px solid oklch(var(--primary) / 0.2);
+  margin-top:var(--space-3);font-size:14px;white-space:pre-wrap;word-break:break-word;
+  animation: successPop 0.3s var(--ease-out);
+}
+.hist-detail img{max-width:100%;border-radius:var(--radius);display:block;margin:var(--space-2) 0}
+.hist-detail video{max-width:100%;border-radius:var(--radius);display:block;margin:var(--space-2) 0;background:#000}
+.hist-filter{display:flex;gap:var(--space-2);margin-bottom:var(--space-4);flex-wrap:wrap}
+.hist-empty{text-align:center;color:var(--muted);padding:var(--space-8) 0;font-size:14px}
+
+/* 社区广场 - 全新设计 */
+.square-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--space-5)}
+.sq-card{
+  background:#fff;border:0.5px solid oklch(0.92 0.01 260);border-radius:var(--radius-lg);
+  overflow:hidden;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;
+  transition:all var(--duration-normal) var(--ease-out);
+  position:relative;
+}
+.sq-card::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(135deg,oklch(var(--primary) / 0.03) 0%,transparent 60%);
+  opacity:0;transition:opacity var(--duration-fast) var(--ease-out);pointer-events:none;
+}
+.sq-card:hover::before{opacity:1}
+.sq-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.sq-card.sq-post{grid-column:1/-1}
+.sq-post .sq-body{padding:var(--space-5)}
+.sq-post .sq-prompt{background:none;border:none;padding:var(--space-1) 0 0;font-size:15px;color:var(--text);line-height:1.8;-webkit-line-clamp:unset;max-height:none;white-space:pre-wrap}
+
+/* 媒体区 - 沉浸式展示 */
+.sq-media{
+  position:relative;background:linear-gradient(135deg,#0f0f14 0%,#1a1a2e 100%);
+  aspect-ratio:4/3;overflow:hidden;
+}
+.sq-media img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  transition:transform 0.6s var(--ease-out),filter 0.3s;
+}
+/* 懒加载动画 */
+.sq-lazy{opacity:0;filter:blur(12px);transition:opacity 0.4s var(--ease-out),filter 0.6s ease}
+.sq-blur{filter:blur(8px);transition:filter 0.5s ease}
+.sq-lazy.sq-loaded,.sq-blur.sq-loaded{opacity:1;filter:blur(0)}
+/* 加载占位符 */
+.sq-loading{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#0f0f14 0%,#1a1a2e 100%);z-index:1;
+}
+.sq-loading::after{
+  content:"";width:24px;height:24px;border:2px solid rgba(255,255,255,0.2);
+  border-top-color:rgba(255,255,255,0.8);border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sq-card:hover .sq-media img{transform:scale(1.05);filter:brightness(1.05)}
+.sq-media video{width:100%;height:100%;object-fit:cover;display:block}
+.sq-media .sq-badge{
+  position:absolute;top:var(--space-3);left:var(--space-3);z-index:2;
+  background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,0.1);
+}
+/* 视频播放按钮 */
+.sq-media::after{
+  content:"";position:absolute;bottom:var(--space-3);right:var(--space-3);
+  width:32px;height:32px;border-radius:50%;
+  background:rgba(255,255,255,0.9);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity var(--duration-fast) var(--ease-out);
+}
+.sq-card:hover .sq-media::after{opacity:1}
+
+/* 卡片内容区 */
+.sq-body{padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-3)}
+.sq-head{display:flex;align-items:center;gap:var(--space-3)}
+.sq-author{display:flex;align-items:center;gap:var(--space-2);font-size:13px;font-weight:600;flex:1;min-width:0}
+.sq-author .u-avatar{
+  width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--primary2));
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;flex-shrink:0;
+  box-shadow:0 2px 8px oklch(var(--primary) / 0.25);
+  transition:transform var(--duration-fast) var(--ease-out);
+}
+.sq-card:hover .sq-author .u-avatar{transform:scale(1.1)}
+.sq-author span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.sq-time{font-size:11px;color:var(--muted);flex-shrink:0}
+.sq-prompt{
+  font-size:12.5px;color:var(--sub);
+  background:linear-gradient(135deg,var(--primary-soft) 0%,oklch(92% 0.03 275) 100%);
+  border-radius:var(--radius);padding:var(--space-3);
+  line-height:1.7;word-break:break-word;position:relative;
+  border:1px solid oklch(var(--primary) / 0.1);
+}
+.sq-prompt .sq-copy{
+  position:absolute;right:var(--space-2);top:var(--space-2);opacity:0;
+  transition:all var(--duration-fast) var(--ease-out);
+}
+.sq-card:hover .sq-copy{opacity:1;transform:scale(1.1)}
+.sq-actions{display:flex;gap:var(--space-2);align-items:center;margin-top:auto;padding-top:var(--space-2)}
+.sq-actions .btn{min-height:34px;padding:6px 14px;font-size:12px;border-radius:999px}
+.load-more{width:100%;margin-top:var(--space-5)}
+.expired{
+  display:flex;align-items:center;justify-content:center;height:100%;
+  color:var(--muted);font-size:13px;
+  background:linear-gradient(135deg,#f8f9fc 0%,#e8eaf0 100%);
+}
+
+/* 留言板 */
+.board-box{
+  background:#fff;border:0.5px solid oklch(0.92 0.01 260);border-radius:var(--radius);
+  padding:var(--space-3);margin-bottom:var(--space-3);
+  box-shadow:var(--shadow-sm);transition:all var(--duration-fast) var(--ease-out);
+}
+.board-box:hover{box-shadow:var(--shadow)}
+.board-box .b-top{display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-2)}
+.board-box .b-name{font-size:13px;font-weight:700}
+.board-box .b-time{font-size:11px;color:var(--muted);margin-left:auto}
+.board-box .b-content{font-size:14px;color:var(--text);word-break:break-word;white-space:pre-wrap;line-height:1.7}
+.board-input{position:sticky;bottom:calc(76px + env(safe-area-inset-bottom));background:var(--bg);padding:var(--space-3) 0}
+.board-input .bi-row{display:flex;gap:var(--space-3)}
+.board-input textarea{flex:1}
+
+/* 登录页 - 全新沉浸式设计 */
+.auth-mask{
+  position:fixed;inset:0;z-index:100;
+  background:linear-gradient(135deg,#0a0a1a 0%,#1a1a3e 50%,#2d1b69 100%);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  overflow:hidden;
+}
+
+/* 主卡片 */
+.auth-card{
+  background:#f4f6f9;
+  border-radius:28px;
+  box-shadow:0 25px 80px rgba(0,0,0,0.5);
+  width:100%;max-width:400px;
+  padding:var(--space-8) var(--space-6);
+  position:relative;z-index:1;
+  animation: authCardIn 0.6s var(--ease-out);
+}
+@keyframes authCardIn{
+  from{opacity:0;transform:translateY(30px) scale(0.95)}
+  to{opacity:1;transform:none}
+}
+/* Logo */
+.auth-logo{
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:var(--space-6);
+}
+.auth-logo .logo-ic{
+  width:72px;height:72px;border-radius:22px;
+  background:linear-gradient(135deg,var(--primary) 0%,oklch(70% 0.15 320) 100%);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 32px oklch(var(--primary) / 0.4),0 0 0 4px rgba(255,255,255,0.2);
+  position:relative;overflow:hidden;
+  animation:logoPulse 3s ease-in-out infinite;
+}
+@keyframes logoPulse{
+  0%,100%{box-shadow:0 8px 32px oklch(var(--primary) / 0.4),0 0 0 4px rgba(255,255,255,0.2)}
+  50%{box-shadow:0 8px 40px oklch(var(--primary) / 0.6),0 0 0 6px rgba(255,255,255,0.3)}
+}
+.auth-logo .logo-ic::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.3) 0%,transparent 60%);
+}
+.auth-logo .logo-ic svg{position:relative;z-index:1}
+/* 标题 */
+.auth-card h1{
+  font-size:30px;text-align:center;margin-bottom:var(--space-2);
+  font-weight:800;letter-spacing:-0.5px;color:var(--text);
+}
+.auth-card .auth-sub{
+  text-align:center;font-size:14px;color:var(--sub);
+  margin-bottom:var(--space-7);line-height:1.7;
+}
+/* 字段组 */
+.auth-field{margin-bottom:var(--space-5)}
+.auth-field label{
+  display:block;font-size:13px;color:var(--sub);font-weight:600;
+  margin-bottom:var(--space-2);letter-spacing:0.3px;
+}
+.input-wrap{
+  position:relative;display:flex;align-items:center;
+  border:0.5px solid oklch(0.92 0.01 260);border-radius:14px;
+  background:#fff;transition:all var(--duration-fast) var(--ease-out);
+}
+.input-wrap:focus-within{
+  border-color:var(--primary);
+  box-shadow:0 0 0 4px oklch(var(--primary) / 0.12);
+}
+.input-icon{
+  position:absolute;left:16px;color:var(--muted);
+  transition:color var(--duration-fast);flex-shrink:0;
+}
+.input-wrap:focus-within .input-icon{color:var(--primary)}
+.auth-field input{
+  flex:1;border:none;background:transparent;
+  font-size:16px;padding:16px 16px 16px 48px;
+  color:var(--text);outline:none;
+}
+.auth-field input::placeholder{color:var(--muted)}
+/* 登录按钮 */
+.btn-auth{
+  width:100%;padding:18px;font-size:16px;font-weight:700;
+  border-radius:14px;margin-top:var(--space-2);
+  background:linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f093fb 100%);
+  color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;
+  box-shadow:0 4px 20px rgba(118,75,162,0.35);
+  transition:all var(--duration-fast) var(--ease-out);
+  position:relative;overflow:hidden;
+}
+.btn-auth::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.15) 0%,transparent 60%);
+  opacity:0;transition:opacity var(--duration-fast);
+}
+.btn-auth:hover::before{opacity:1}
+.btn-auth:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 32px rgba(118,75,162,0.45);
+}
+.btn-auth:active{transform:translateY(0)}
+.btn-auth svg{transition:transform var(--duration-fast)}
+.btn-auth:hover svg{transform:translateX(4px)}
+.btn-auth:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+/* 切换链接 */
+.auth-switch{
+  text-align:center;font-size:14px;color:var(--sub);
+  margin-top:var(--space-6);
+}
+.auth-switch a{
+  color:var(--primary);font-weight:600;cursor:pointer;
+  text-decoration:none;position:relative;
+  transition:color var(--duration-fast);
+}
+.auth-switch a::after{
+  content:"";position:absolute;bottom:-2px;left:0;width:0;height:2px;
+  background:var(--primary);transition:width var(--duration-fast) var(--ease-out);
+  border-radius:1px;
+}
+.auth-switch a:hover{color:oklch(65% 0.18 285)}
+.auth-switch a:hover::after{width:100%}
+/* 提示 */
+.auth-tip{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  font-size:12px;color:var(--sub);text-align:center;
+  margin-top:var(--space-4);line-height:1.7;
+  padding:var(--space-3) var(--space-4);background:var(--blue-soft);
+  border-radius:12px;
+}
+
+/* 导入旧数据 */
+.import-old{margin:0 0 18px}
+
+/* 模态 */
+.modal-mask{
+  position:fixed;inset:0;background:oklch(0.15 0 0 / 0.5);z-index:90;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;pointer-events:none;transition:opacity var(--duration-normal) var(--ease-out);
+  backdrop-filter:blur(4px);
+}
+.modal-mask.show{opacity:1;pointer-events:auto}
+.modal{
+  background:#fff;border-radius:var(--radius-lg);max-width:400px;width:100%;
+  padding:var(--space-6);box-shadow:var(--shadow-lg);
+  animation: successPop 0.3s var(--ease-out);
+}
+.modal b{font-size:17px;display:block;margin-bottom:var(--space-2);font-weight:700}
+.modal p{font-size:14px;color:var(--sub);margin-bottom:var(--space-5);line-height:1.7}
+.modal .m-ops{display:flex;gap:var(--space-3);justify-content:flex-end}
+
+/* 图片预览 Lightbox */
+.img-lightbox{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s ease;backdrop-filter:blur(6px)}
+.img-lightbox.show{opacity:1;pointer-events:auto}
+.img-lightbox-inner{position:relative;max-width:92vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;gap:var(--space-3)}
+.img-lightbox-inner img{max-width:100%;max-height:78vh;border-radius:var(--radius);object-fit:contain;box-shadow:0 16px 48px rgba(0,0,0,.4)}
+.lightbox-close{position:absolute;top:-12px;right:-12px;width:34px;height:34px;border-radius:50%;background:#fff;color:var(--text);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);transition:transform var(--duration-fast) var(--ease-out);z-index:1}
+.lightbox-close:hover{transform:scale(1.1)}
+.lightbox-info{font-size:13px;color:oklch(.85 0 0);text-align:center;max-width:60vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lightbox-actions{display:flex;gap:var(--space-2)}
+
+/* 设置抽屉 */
+.drawer-mask{
+  position:fixed;inset:0;background:oklch(0.15 0 0 / 0.4);z-index:95;
+  opacity:0;pointer-events:none;transition:opacity var(--duration-normal) var(--ease-out);
+  backdrop-filter:blur(2px);
+}
+.drawer-mask.show{opacity:1;pointer-events:auto}
+.drawer{
+  position:fixed;top:0;right:0;height:100%;width:min(400px,94vw);
+  background:#fff;z-index:96;
+  transform:translateX(105%);
+  transition:transform var(--duration-normal) var(--ease-out);
+  box-shadow:var(--shadow-lg);display:flex;flex-direction:column;
+}
+.drawer.show{transform:none}
+.drawer-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:var(--space-5) var(--space-5);border-bottom:1px solid var(--line);
+}
+.drawer-head b{font-size:17px;font-weight:700}
+.drawer-body{flex:1;overflow:auto;padding:var(--space-5)}
+.ch-card{
+  border:0.5px solid oklch(0.92 0.01 260);border-radius:var(--radius);
+  padding:var(--space-3);margin-bottom:var(--space-2);background:#fff;
+  transition:all var(--duration-fast) var(--ease-out);
+}
+.ch-card:hover{border-color:oklch(var(--primary) / 0.3);box-shadow:var(--shadow-sm)}
+.ch-card .ch-top{display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-1)}
+.ch-card .ch-name{font-weight:700;font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-card .ch-model{font-size:12px;color:var(--muted)}
+.ch-card .ch-note{font-size:12px;color:var(--muted);margin-top:var(--space-1)}
+.ch-card .ch-ops{display:flex;gap:var(--space-2);margin-top:var(--space-3);flex-wrap:wrap}
+
+/* toast */
+#toast{
+  position:fixed;left:50%;bottom:96px;
+  transform:translateX(-50%) translateY(20px);
+  background:#1e2433;color:#fff;
+  padding:12px 24px;border-radius:var(--radius);
+  font-size:14px;z-index:120;
+  opacity:0;pointer-events:none;
+  transition:all var(--duration-normal) var(--ease-out);
+  max-width:88vw;text-align:center;
+  box-shadow:var(--shadow-lg);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.toast-success{background:var(--green);box-shadow:0 4px 12px oklch(var(--green) / 0.3)}
+#toast.toast-error{background:var(--red);box-shadow:0 4px 12px oklch(var(--red) / 0.3)}
+
+/* 底部导航（移动） */
+.m-tabbar{display:none}
+
+/* 响应式 */
+@media (max-width:767px){
+  .sidebar{display:none}
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:50;
+    background:rgba(255,255,255,.95);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);padding:var(--space-3) var(--space-4);
+  }
+  .topbar .logo-ic{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--primary2));display:flex;align-items:center;justify-content:center}
+  .topbar b{font-size:15px;margin-left:var(--space-2)}
+  .topbar .tb-ops{display:flex;gap:var(--space-2);align-items:center}
+  .main{padding:var(--space-3) var(--space-3) 100px;max-width:none}
+  .card{padding:var(--space-3);border-radius:var(--radius)}
+  .today-cards{grid-template-columns:1fr 1fr;gap:var(--space-3)}
+  .gen-form .row,.gen-form .row3{grid-template-columns:1fr}
+  .m-tabbar{
+    display:flex;position:fixed;bottom:0;left:0;right:0;z-index:80;
+    background:rgba(255,255,255,.98);backdrop-filter:blur(12px);
+    border-top:1px solid var(--line);
+    padding:var(--space-2) var(--space-1) calc(var(--space-2) + env(safe-area-inset-bottom));
+  }
+  .m-tabbar .mt{
+    flex:1;display:flex;flex-direction:column;align-items:center;
+    gap:2px;padding:6px 2px;font-size:10px;color:var(--muted);
+    border-radius:10px;font-weight:500;transition:all var(--duration-fast) var(--ease-out);
+    min-height:44px; /* Touch target */
+  }
+  .m-tabbar .mt:active{transform:scale(0.92);background:var(--primary-soft)}
+  .m-tabbar .mt.active{color:var(--primary);background:var(--primary-soft);font-weight:700}
+  .t-item{flex-wrap:wrap}
+  .t-item .t-main{flex-basis:calc(100% - 52px)}
+  .t-item .t-act{width:100%;justify-content:flex-end;margin-top:var(--space-2)}
+  .t-item .t-act .btn{flex:0 0 auto;min-height:40px}
+  .hist-item .h-ops{display:none}
+  .hist-item:active{background:var(--primary-soft)}
+  .img-card .img-ops{opacity:1}
+  .result-actions .btn{flex:1}
+  .square-grid{grid-template-columns:1fr 1fr;gap:var(--space-3)}
+  .sq-prompt .sq-copy{opacity:1}
+  .sq-time{display:none}
+  .board-input{bottom:calc(72px + env(safe-area-inset-bottom))}
+}
+@media (min-width:768px){
+  .m-tabbar{display:none}
+}
+
+/* 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 动效 */
+@keyframes successPop {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes slideInRight {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(0); }
+}
+@keyframes fadeUp {
+  0% { transform: translateY(10px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.fade-in { animation: fadeUp 0.3s var(--ease-out); }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- PC 侧边栏 -->
+  <aside class="sidebar">
+    <div class="side-logo">
+      <div class="logo-ic">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- 抽象的创作符号：四向发散 + 中心圆 -->
+          <path d="M12 2v5M12 17v5M2 12h5M17 12h5" opacity="0.9"/>
+          <circle cx="12" cy="12" r="3.5" fill="rgba(255,255,255,0.15)" stroke="#fff"/>
+          <path d="M12 6.5L14.5 9v3L12 14l-2.5-2V9z" opacity="0.7"/>
+        </svg>
+      </div>
+      <div><b>AI 创作台</b><small>文本 · 图片 · 视频 · 短剧</small></div>
+    </div>
+    <nav class="side-nav" id="sideNav">
+      <button class="nav-item active" data-tab="home">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>今天 · 我的记录
+      </button>
+      <button class="nav-item" data-tab="text">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"/></svg>文本工坊
+      </button>
+      <button class="nav-item" data-tab="image">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L7 20"/></svg>图片工坊
+      </button>
+      <button class="nav-item" data-tab="video">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4V8z"/></svg>视频工坊
+      </button>
+      <button class="nav-item" data-tab="drama">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.5"/></svg>短剧工坊
+      </button>
+      <button class="nav-item" data-tab="community">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 14.5c2.8 0 5.5 1.8 5.5 5"/></svg>社区广场
+      </button>
+      <button class="nav-item" data-tab="profile" style="display:none">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>个人中心
+      </button>
+    </nav>
+    <div class="side-foot">
+      <div class="userbar" id="sideUserBar"></div>
+      <div class="u-ops">
+        <button class="btn btn-ghost btn-sm" onclick="openSettings()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg>渠道设置
+        </button>
+        <button class="btn btn-ghost btn-sm" id="btnAdmin" style="display:none" onclick="location.href='/admin.html'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z"/></svg>管理后台
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="doLogout()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>退出登录
+        </button>
+      </div>
+      <div data-ver style="text-align:center;font-size:11px;color:var(--muted);margin-top:10px">v1.0.1</div>
+    </div>
+  </aside>
+
+  <div style="display:flex;flex-direction:column;flex:1;min-width:0">
+    <!-- 移动顶栏 -->
+    <header class="topbar">
+      <div style="display:flex;align-items:center">
+        <div class="logo-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v5M12 17v5M2 12h5M17 12h5" opacity="0.9"/><circle cx="12" cy="12" r="3.5" fill="rgba(255,255,255,0.15)" stroke="#fff"/><path d="M12 6.5L14.5 9v3L12 14l-2.5-2V9z" opacity="0.7"/></svg></div>
+        <b>AI 创作台</b>
+      </div>
+      <div class="tb-ops" id="tbUser"></div>
+    </header>
+
+    <main class="main" id="main">
+
+      <!-- ======== 首页：今天要处理 + 我的记录 ======== -->
+      <section id="tab-home">
+        <div class="card" style="background:linear-gradient(135deg,var(--primary-soft) 0%,var(--purple-soft) 100%);border:0.5px solid oklch(var(--primary) / 0.15)">
+          <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap">
+            <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--primary2));display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+            <div style="flex:1;min-width:200px">
+              <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">每日额度说明</div>
+              <div style="font-size:13px;color:var(--sub);line-height:1.6">
+                📝 文本生成：<b style="color:var(--primary)">每日 1500 次，每周 15000 次</b>（约 5 小时）&nbsp;·&nbsp;
+                🎨 图像生成：<b style="color:var(--purple)">每日 4000 张</b>&nbsp;·&nbsp;
+                🎬 视频生成：<b style="color:var(--pink)">每日 500 秒</b>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="today-cards" id="statCards"></div>
+        <div id="quotaStats" style="margin-top:12px;display:none"></div>
+        <div id="expiryNotice" style="display:none"></div>
+
+        <div class="card" style="margin-top:18px">
+          <div class="card-title"><span class="dot" style="background:var(--amber)"></span>今天要处理</div>
+          <div class="today-list" id="todayList"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot" style="background:var(--primary)"></span>我的生成记录 <span id="histTotal" style="font-size:12px;color:var(--muted);font-weight:400"></span></div>
+          <div class="hist-filter" id="histFilter">
+            <button class="chip active" data-f="all">全部</button>
+            <button class="chip" data-f="text">文本</button>
+            <button class="chip" data-f="image">图片</button>
+            <button class="chip" data-f="video">视频</button>
+            <button class="chip" data-f="drama">短剧</button>
+          </div>
+          <div id="allHist"></div>
+        </div>
+      </section>
+
+      <!-- ======== 文本工坊 ======== -->
+      <section id="tab-text" class="hidden">
+        <div class="card">
+          <div class="card-title"><span class="dot" style="background:var(--blue)"></span>文本生成</div>
+          <div class="template-chips" id="textChips">
+            <button class="chip active" data-t="自由创作">自由创作</button>
+            <button class="chip" data-t="小红书文案">小红书文案</button>
+            <button class="chip" data-t="短视频脚本">短视频脚本</button>
+            <button class="chip" data-t="标题创作">标题创作</button>
+            <button class="chip" data-t="设计说明">设计说明/汇报文案</button>
+          </div>
+          <div class="prompt-wrap">
+            <textarea id="textPrompt" rows="4" placeholder="输入主题或要求，例如：写一条新中式茶馆开业的小红书种草文案，突出东方美学和茶文化…"></textarea>
+            <span class="char-count" id="textCount">0</span>
+          </div>
+          <div class="row">
+            <div>
+              <label>输出字数参考</label>
+              <select id="textLen"><option value="300">300 字左右</option><option value="500" selected>500 字左右</option><option value="1000">1000 字左右</option><option value="2000">2000 字左右</option></select>
+            </div>
+            <div style="display:flex;align-items:flex-end">
+              <button class="btn btn-primary block" id="textBtn" onclick="genText()">开始生成</button>
+            </div>
+          </div>
+          <div id="textResult"></div>
+        </div>
+        <h3 class="sec">我的文本历史</h3>
+        <div id="textHist"></div>
+      </section>
+
+      <!-- ======== 图片工坊 ======== -->
+      <section id="tab-image" class="hidden">
+        <div class="card">
+          <div class="card-title"><span class="dot" style="background:var(--purple)"></span>图片生成</div>
+          <div class="key-hint" style="font-size:12px;color:var(--muted);margin-bottom:8px">选一个风格分类，输入简单描述后点「智能扩展」，AI 会自动生成专业提示词</div>
+          <div class="template-chips" id="imgStyleChips" style="margin-bottom:8px">
+            <button class="chip active" data-s="写实摄影">写实摄影</button>
+            <button class="chip" data-s="赛博朋克">赛博朋克</button>
+            <button class="chip" data-s="国风插画">国风插画</button>
+            <button class="chip" data-s="动漫二次元">动漫二次元</button>
+            <button class="chip" data-s="油画风格">油画风格</button>
+            <button class="chip" data-s="水彩插画">水彩插画</button>
+            <button class="chip" data-s="3D 渲染">3D 渲染</button>
+            <button class="chip" data-s="产品摄影">产品摄影</button>
+            <button class="chip" data-s="极简摄影">极简摄影</button>
+            <button class="chip" data-s="电影感大片">电影感大片</button>
+            <button class="chip" data-s="儿童绘本">儿童绘本</button>
+            <button class="chip" data-s="蒸汽波">蒸汽波</button>
+          </div>
+          <div class="prompt-wrap">
+            <textarea id="imgPrompt" rows="3" placeholder="先用一句话描述画面，如：一只柴犬在樱花树下睡觉… 然后点「智能扩展」自动生成专业提示词"></textarea>
+            <span class="char-count" id="imgCount">0</span>
+          </div>
+          <div class="result-actions" style="margin:10px 0 0">
+            <button class="btn btn-ghost btn-sm" onclick="expandPrompt()">✨ 智能扩展提示词</button>
+          </div>
+          <div class="row3">
+            <div>
+              <label>画幅比例</label>
+              <select id="imgRatio">
+                <option value="1:1">1:1 方形</option>
+                <option value="16:9" selected>16:9 横屏</option>
+                <option value="9:16">9:16 竖屏</option>
+                <option value="3:4">3:4</option>
+                <option value="4:3">4:3</option>
+                <option value="2:3">2:3</option>
+                <option value="3:2">3:2</option>
+                <option value="21:9">21:9 超宽</option>
+              </select>
+            </div>
+            <div>
+              <label>清晰度</label>
+              <select id="imgSize">
+                <option value="1K">1K 标准</option>
+                <option value="2K" selected>2K 高清</option>
+                <option value="3K">3K 超清</option>
+                <option value="4K">4K 极清</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:flex-end">
+              <button class="btn btn-primary block" id="imgBtn" onclick="genImage()">开始生成</button>
+            </div>
+          </div>
+          <div id="imgResult"></div>
+        </div>
+        <h3 class="sec">我的图片历史</h3>
+        <div id="imgHist"></div>
+      </section>
+
+      <!-- ======== 视频工坊 ======== -->
+      <section id="tab-video" class="hidden">
+        <div class="card">
+          <div class="card-title"><span class="dot" style="background:var(--pink)"></span>视频生成</div>
+          <div class="prompt-wrap">
+            <textarea id="vidPrompt" rows="3" placeholder="描述画面、运镜、氛围（中文即可）。需要人物说话时可直接写台词，例如：中国夜市的小吃摊，厨师对顾客说“欢迎光临，请坐”，暖色灯光，缓缓推近…"></textarea>
+            <span class="char-count" id="vidCount">0</span>
+          </div>
+          <div class="row3">
+            <div>
+              <label>画幅</label>
+              <select id="vidRatio">
+                <option value="16:9" selected>16:9 横屏</option>
+                <option value="9:16">9:16 竖屏</option>
+                <option value="1:1">1:1 方形</option>
+              </select>
+            </div>
+            <div>
+              <label>时长</label>
+              <select id="vidLen">
+                <option value="5">约 5 秒</option>
+                <option value="10" selected>约 10 秒</option>
+                <option value="18">约 18 秒</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:flex-end">
+              <button class="btn btn-primary block" id="vidBtn" onclick="genVideo()">开始生成</button>
+            </div>
+          </div>
+          <div class="key-hint" style="margin-top:10px;font-size:12.5px;color:var(--muted)">视频采用异步生成：提交后约 2-4 分钟出片，页面会自动轮询进度。生成期间请保持本页面打开，可切换到其他工坊继续创作。</div>
+
+          <div class="card-title" style="margin-top:16px;font-size:14px"><span class="dot" style="background:var(--orange)"></span>参考图（图生视频，可选）</div>
+          <div class="key-hint" style="font-size:12px;color:var(--muted);margin-bottom:8px">填写 2-4 张图片 URL（最后一张作为背景），AI 将参考图中的人物/场景生成视频。也可从「我的图片」直接选择。</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="refImgs">
+            <input id="refImg1" placeholder="参考图 1（必填，如选参考图）" style="font-size:13px">
+            <input id="refImg2" placeholder="参考图 2（必填）" style="font-size:13px">
+            <input id="refImg3" placeholder="参考图 3（可选）" style="font-size:13px">
+            <input id="refImg4" placeholder="参考图 4（可选）" style="font-size:13px">
+          </div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="pickRefImages()">+ 从我的图片选择</button>
+          <div id="refPickGrid" class="hidden" style="margin-top:8px">
+            <div class="img-grid" id="refPickList" style="grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;margin-top:0"></div>
+          </div>
+
+          <div id="vidResult"></div>
+        </div>
+        <h3 class="sec">我的视频历史</h3>
+        <div id="vidHist"></div>
+      </section>
+
+      <!-- ======== 短剧工坊 ======== -->
+      <section id="tab-drama" class="hidden">
+        <div class="card">
+          <div class="card-title"><span class="dot" style="background:var(--orange)"></span>短剧剧本生成</div>
+          <div class="template-chips" id="dramaChips">
+            <button class="chip active" data-t="甜宠">甜宠</button>
+            <button class="chip" data-t="逆袭爽剧">逆袭爽剧</button>
+            <button class="chip" data-t="悬疑">悬疑</button>
+            <button class="chip" data-t="都市情感">都市情感</button>
+            <button class="chip" data-t="重生虐渣">重生虐渣</button>
+          </div>
+          <div class="prompt-wrap">
+            <textarea id="dramaPrompt" rows="3" placeholder="输入短剧主题或设定，例如：高冷甜品师女主 vs 霸道总裁，女主靠祖传甜品配方翻身创业…"></textarea>
+            <span class="char-count" id="dramaCount">0</span>
+          </div>
+          <div class="row">
+            <div>
+              <label>剧集规模</label>
+              <select id="dramaEpisodes"><option value="3">前 3 集大纲</option><option value="5">前 5 集大纲</option><option value="10">前 10 集大纲</option></select>
+            </div>
+            <div style="display:flex;align-items:flex-end">
+              <button class="btn btn-primary block" id="dramaBtn" onclick="genDrama()">生成剧本</button>
+            </div>
+          </div>
+          <div class="key-hint" style="margin-top:10px;font-size:12.5px;color:var(--muted)">输出结构：剧名 + 一句话卖点 + 人物设定 + 故事梗概 + 分集大纲 + 第 1 集完整剧本（场景/对白/动作）。</div>
+          <div id="dramaResult"></div>
+        </div>
+        <h3 class="sec">我的短剧历史</h3>
+        <div id="dramaHist"></div>
+      </section>
+
+      <!-- ======== 社区广场 ======== -->
+      <section id="tab-community" class="hidden">
+        <div class="card" style="background:linear-gradient(135deg,var(--primary-soft) 0%,var(--purple-soft) 100%);border:0.5px solid oklch(var(--primary) / 0.15);margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap">
+            <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--primary2));display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div style="flex:1;min-width:200px">
+              <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px">社区广场 · 每日额度</div>
+              <div style="font-size:12.5px;color:var(--sub)">
+                📝 文本：<b style="color:var(--primary)">1500次/日</b> &nbsp;·&nbsp;
+                🎨 图片：<b style="color:var(--purple)">4000张/日</b> &nbsp;·&nbsp;
+                🎬 视频：<b style="color:var(--pink)">500秒/日</b>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="template-chips" id="commChips" style="margin-bottom:14px">
+          <button class="chip active" data-c="image">图片广场</button>
+          <button class="chip" data-c="video">视频广场</button>
+          <button class="chip" data-c="drama">短剧广场</button>
+          <button class="chip" data-c="post">帖子</button>
+          <button class="chip" data-c="board">留言板</button>
+        </div>
+
+        <div id="comm-square">
+          <div class="card" style="padding:14px 16px">
+            <div class="card-title" style="margin-bottom:6px;font-size:15px" id="sqTitle">图片广场</div>
+            <div class="key-hint" style="font-size:12px;color:var(--muted)" id="sqSub">每条内容下方的提示词是作者的创作灵感，欢迎互相借鉴交流</div>
+          </div>
+          <div class="card hidden" id="postComposer" style="padding:16px">
+            <div class="card-title" style="margin-bottom:10px;font-size:15px"><span class="dot" style="background:var(--green)"></span>发布帖子</div>
+            <textarea id="postContent" rows="3" placeholder="分享提示词、创作经验、求教程，或任何想交流的内容…（最多 500 字）"></textarea>
+            <div class="result-actions" style="margin-top:10px">
+              <button class="btn btn-ghost btn-sm" id="postMediaBtn" onclick="togglePostMedia()">+ 挂上我的图片/视频</button>
+              <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="publishPost()">发布</button>
+            </div>
+            <div id="postMediaPicker" class="hidden" style="margin-top:10px">
+              <div class="key-hint" style="font-size:12px;color:var(--muted);margin-bottom:8px">从你的已生成作品中选一张（可选，最多 1 个）：</div>
+              <div class="img-grid" id="postMediaGrid" style="grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-top:0"></div>
+            </div>
+            <div id="postMediaPreview" class="hidden" style="margin-top:10px"></div>
+          </div>
+          <div class="square-grid" id="squareGrid"></div>
+          <button class="btn btn-ghost load-more" id="squareMore" onclick="loadSquare(false)">加载更多</button>
+          <div class="hist-empty" id="squareEmpty" style="display:none">还没有作品，去工坊生成第一个吧！</div>
+        </div>
+
+        <div id="comm-board" class="hidden">
+          <div class="board-input">
+            <div class="bi-row">
+              <textarea id="boardInput" rows="2" placeholder="说点什么…（最多 500 字）"></textarea>
+              <button class="btn btn-primary" style="align-self:stretch" onclick="sendMessage()">发送</button>
+            </div>
+          </div>
+          <div id="boardList"></div>
+        </div>
+      </section>
+
+      <!-- ======== 个人中心 ======== -->
+      <section id="tab-profile" class="hidden">
+        <div class="profile-card" id="profileCard">
+          <div class="profile-avatar" id="profileAvatar">?</div>
+          <div class="profile-info">
+            <h2 id="profileName">加载中...</h2>
+            <p id="profileJoined">加入时间：--</p>
+            <div class="profile-stats">
+              <div class="profile-stat">
+                <div class="num" id="profToday">-</div>
+                <div class="lbl">今日生成</div>
+              </div>
+              <div class="profile-stat">
+                <div class="num" id="profTotal">-</div>
+                <div class="lbl">总作品</div>
+              </div>
+              <div class="profile-stat">
+                <div class="num" id="profImages">-</div>
+                <div class="lbl">图片</div>
+              </div>
+              <div class="profile-stat">
+                <div class="num" id="profVideos">-</div>
+                <div class="lbl">视频</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="profileQuotaBar" style="margin-bottom:20px"></div>
+        <div id="profileExpiryNotice" style="margin-bottom:20px"></div>
+
+        <h3 class="sec">我的作品</h3>
+        <div class="template-chips" id="profileFilter" style="margin-bottom:14px">
+          <button class="chip active" data-f="all">全部</button>
+          <button class="chip" data-f="image">图片</button>
+          <button class="chip" data-f="video">视频</button>
+          <button class="chip" data-f="drama">短剧</button>
+        </div>
+        <div class="img-grid" id="profileGrid" style="margin-bottom:20px"></div>
+        <button class="btn btn-ghost load-more" id="profileMore" onclick="loadProfileMore()" style="display:none">加载更多</button>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- 移动底部导航 -->
+<nav class="m-tabbar" id="mTabbar">
+  <button class="mt active" data-tab="home">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>今天
+  </button>
+  <button class="mt" data-tab="text">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"/></svg>文本
+  </button>
+  <button class="mt" data-tab="image">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L7 20"/></svg>图片
+  </button>
+  <button class="mt" data-tab="video">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4V8z"/></svg>视频
+  </button>
+  <button class="mt" data-tab="drama">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.5"/></svg>短剧
+  </button>
+  <button class="mt" data-tab="community">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 14.5c2.8 0 5.5 1.8 5.5 5"/></svg>社区
+  </button>
+  <button class="mt" data-tab="profile" style="display:none">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>我的
+  </button>
+</nav>
+
+<!-- 确认模态 -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <b id="modalTitle">确认操作</b>
+    <p id="modalMsg">确定要执行此操作吗？</p>
+    <div class="m-ops">
+      <button class="btn btn-ghost" onclick="closeModal()">取消</button>
+      <button class="btn btn-danger" id="modalOkBtn">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 图片预览模态 -->
+<div class="img-lightbox" id="imgLightbox" onclick="closeLightbox(event)">
+  <div class="img-lightbox-inner" onclick="event.stopPropagation()">
+    <button class="lightbox-close" onclick="closeLightbox()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <img id="lightboxImg" src="" alt="原图">
+    <div class="lightbox-info" id="lightboxInfo"></div>
+    <div class="lightbox-actions">
+      <a id="lightboxDownload" href="#" download class="btn btn-primary btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>下载原图</a>
+      <button class="btn btn-ghost btn-sm" onclick="closeLightbox()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- 渠道设置抽屉 -->
+<div class="drawer-mask" id="drawerMask" onclick="closeSettings()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <b>渠道设置</b>
+    <span style="display:flex;align-items:center;gap:10px"><span data-ver style="font-size:11px;color:var(--muted)">v1.0.1</span>
+    <button class="btn-icon" onclick="closeSettings()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button></span>
+  </div>
+  <div class="drawer-body">
+    <div class="card-title" style="font-size:15px;margin-bottom:6px"><span class="dot" style="background:var(--blue)"></span>当前可用渠道</div>
+    <div class="key-hint" style="font-size:12px;color:var(--muted);margin-bottom:12px">生成时按 文本/图片/视频 自动选择对应渠道；我的自定义渠道优先于预设渠道。</div>
+    <div id="chGroups"></div>
+
+    <div id="chUserZone" style="margin-top:18px"></div>
+  </div>
+</div>
+
+<!-- 登录 / 注册 -->
+<div class="auth-mask hidden" id="authMask">
+  <div class="auth-card">
+    <!-- Logo区域 -->
+    <div class="auth-logo">
+      <div class="logo-ic">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>
+          <circle cx="12" cy="12" r="3" fill="rgba(255,255,255,0.2)"/>
+          <path d="M12 7L14.5 9v3L12 14l-2.5-2V9z"/>
+        </svg>
+      </div>
+    </div>
+    
+    <!-- 标题 -->
+    <h1 id="authTitle">欢迎回来</h1>
+    <div class="auth-sub" id="authSub">登录以开始创作，或注册新账号加入社区</div>
+    
+    <!-- 表单 -->
+    <form onsubmit="return false;" autocomplete="on">
+      <div class="auth-field">
+        <label for="authUser">用户名</label>
+        <div class="input-wrap">
+          <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <input type="text" id="authUser" placeholder="输入用户名" autocomplete="username">
+        </div>
+      </div>
+      
+      <div class="auth-field">
+        <label for="authPass">密码</label>
+        <div class="input-wrap">
+          <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <input type="password" id="authPass" placeholder="输入密码" autocomplete="current-password">
+        </div>
+      </div>
+      
+      <button class="btn-auth" id="authBtn" onclick="doAuth()">
+        <span>登录</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </button>
+    </form>
+    
+    <!-- 切换登录/注册 -->
+    <div class="auth-switch" id="authSwitch">
+      还没有账号？<a onclick="toggleAuthMode()">立即注册</a>
+    </div>
+    
+    <!-- 提示 -->
+    <div class="auth-tip">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 16v-4M12 8h.01"/>
+      </svg>
+      生成的内容会发布到社区广场，供大家交流学习
+    </div>
+    
+    <div data-ver style="text-align:center;font-size:11px;color:var(--muted);margin-top:14px">v1.0.8</div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ================= 认证 ================= */
+const LS_TOKEN = "wb_aistudio_token";
+const LS_HIST = "wb_aistudio_history";
+const LS_TAB = "wb_aistudio_tab";
+let TOKEN = localStorage.getItem(LS_TOKEN) || "";
+let ME = null; // {username, isAdmin}
+let authMode = "login";
+
+async function req(path, opts) {
+  opts = opts || {};
+  const headers = Object.assign({}, opts.headers || {});
+  if (opts.body !== undefined) headers["Content-Type"] = "application/json";
+  if (TOKEN) headers["Authorization"] = "Bearer " + TOKEN;
+  const res = await fetch("/api" + path, { method: opts.method || "GET", headers, body: opts.body });
+  let data = {};
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+  return data.data;
+}
+
+/* ================= 数据层（本地视图缓存） ================= */
+let HIST = [];
+try { HIST = JSON.parse(localStorage.getItem(LS_HIST) || "[]") || []; } catch (e) { HIST = []; }
+function saveHist() { localStorage.setItem(LS_HIST, JSON.stringify(HIST)); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+const TYPE_META = {
+  text:  { label: "文本", cls: "b-tag-t", bg: "#eaf2ff", fg: "#3b82f6" },
+  image: { label: "图片", cls: "b-tag-i", bg: "#f3ecff", fg: "#8b5cf6" },
+  video: { label: "视频", cls: "b-tag-v", bg: "#fdeef6", fg: "#ec4899" },
+  drama: { label: "短剧", cls: "b-tag-d", bg: "#fff1e6", fg: "#f97316" },
+  post:  { label: "帖子", cls: "b-tag-d", bg: "#e9f9ef", fg: "#16a34a" }
+};
+
+/* 图片缩略图：server 端生成 */
+const PAGE_VER = 1787703425;
+function imgThumbUrl(url, w) {
+  if (!url) return "";
+  w = w || 400;
+  return "/api/image/thumb?url=" + encodeURIComponent(url) + "&w=" + w + "&v=" + PAGE_VER;
+}
+
+/* ================= 工具 ================= */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function fmtTime(t) {
+  const d = new Date(t), now = new Date();
+  const hm = d.getHours().toString().padStart(2, "0") + ":" + d.getMinutes().toString().padStart(2, "0");
+  if (d.toDateString() === now.toDateString()) return "今天 " + hm;
+  if (d.toDateString() === new Date(now - 86400000).toDateString()) return "昨天 " + hm;
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function fmtDate(t) { const d = new Date(t); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function toast(msg, type) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.className = ""; // Reset classes
+  if (type === "success") {
+    t.classList.add("toast-success");
+  } else if (type === "error") {
+    t.classList.add("toast-error");
+  }
+  t.classList.add("show");
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove("show"), 2600);
+}
+function icon(name, size) {
+  const I = {
+    text: '<path d="M4 6h16M4 12h10M4 18h7"/>',
+    image: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L7 20"/>',
+    video: '<rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4V8z"/>',
+    drama: '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.5"/>',
+    copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
+    dl: '<path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',
+    retry: '<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>',
+    del: '<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>',
+    eye: '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.5"/>',
+    refresh: '<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>'
+  };
+  return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (I[name] || "") + "</svg>";
+}
+
+/* ================= 导航 ================= */
+let currentTab = localStorage.getItem(LS_TAB) || "home";
+function guardLogin() {
+  if (ME) return true;
+  showAuth();
+  toast("请先登录后使用此功能");
+  return false;
+}
+function switchTab(tab, noScroll) {
+  if (!ME && tab !== "community" && tab !== "profile") {
+    showAuth();
+    toast("请先登录后使用创作功能");
+    return;
+  }
+  currentTab = tab;
+  localStorage.setItem(LS_TAB, tab);
+  $$(".nav-item").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  $$(".mt").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  ["home", "text", "image", "video", "drama", "community", "profile"].forEach(t => {
+    $("#tab-" + t).classList.toggle("hidden", t !== tab);
+  });
+  if (tab === "home") renderHome();
+  if (tab === "text") renderTypeHist("text", "#textHist");
+  if (tab === "image") renderTypeHist("image", "#imgHist");
+  if (tab === "video") renderTypeHist("video", "#vidHist");
+  if (tab === "drama") renderTypeHist("drama", "#dramaHist");
+  if (tab === "community") {
+    if (commView === "board") loadMessages();
+    else { squareType = commView; loadSquare(true); }
+  }
+  if (tab === "profile") renderProfile();
+  if (!noScroll) window.scrollTo({ top: 0, behavior: "smooth" });
+}
+$$(".nav-item").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+$$(".mt").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+
+/* ================= 首页渲染 ================= */
+function renderHome() {
+  const today = fmtDate(Date.now());
+  const todays = HIST.filter(h => fmtDate(h.createdAt) === today);
+  const ok = todays.filter(h => h.status === "done").length;
+  const fail = todays.filter(h => h.status === "failed").length;
+  const pend = todays.filter(h => h.status === "pending").length;
+  $("#statCards").innerHTML =
+    '<div class="tstat"><div class="num" style="color:var(--primary)">' + todays.length + '</div><div class="lbl">今日生成</div></div>' +
+    '<div class="tstat"><div class="num" style="color:var(--green)">' + ok + '</div><div class="lbl">今日成功</div></div>' +
+    '<div class="tstat"><div class="num" style="color:var(--red)">' + fail + '</div><div class="lbl">今日失败</div></div>' +
+    '<div class="tstat"><div class="num" style="color:var(--amber)">' + pend + '</div><div class="lbl">生成中</div></div>';
+
+  // 加载服务器端每日额度统计和过期提醒
+  loadQuotaStats();
+  checkExpiry();
+
+  const failItems = HIST.filter(h => h.status === "failed");
+  const pendItems = HIST.filter(h => h.status === "pending");
+  const newItems = HIST.filter(h => h.status === "done" && !h.viewed);
+  let html = "";
+  if (failItems.length === 0 && pendItems.length === 0 && newItems.length === 0) {
+    html = '<div class="hist-empty">今天没有待处理事项 🎉 去生成点新内容吧</div>';
+  }
+  failItems.forEach(h => html += tItemHtml(h, "fail"));
+  pendItems.forEach(h => html += tItemHtml(h, "pend"));
+  newItems.forEach(h => html += tItemHtml(h, "new"));
+  $("#todayList").innerHTML = html;
+
+  $("#histTotal").textContent = "（共 " + HIST.length + " 条）";
+  const f = histFilter;
+  let list = f === "all" ? HIST : HIST.filter(h => h.type === f);
+  list = list.slice().sort((a, b) => b.createdAt - a.createdAt);
+  $("#allHist").innerHTML = list.length ? list.map(histItemHtml).join("") : '<div class="hist-empty">还没有生成记录，去工坊试试吧</div>';
+}
+
+async function loadQuotaStats() {
+  try {
+    const d = await req("/quota");
+    const stats = d.data || {};
+    const quotaEl = $("#quotaStats");
+    if (!quotaEl) return;
+    quotaEl.style.display = "block";
+    
+    // 计算百分比
+    const todayUsed = stats.today || 0;
+    const todayTotal = 4000;
+    const pct = Math.min(100, Math.round(todayUsed / todayTotal * 100));
+    const remaining = todayTotal - todayUsed;
+    
+    // 根据使用率选择颜色
+    let color = 'var(--green)';
+    let bgColor = 'var(--green-soft)';
+    if (pct > 80) { color = 'var(--red)'; bgColor = 'var(--red-soft)'; }
+    else if (pct > 50) { color = 'var(--amber)'; bgColor = 'var(--amber-soft)'; }
+    
+    quotaEl.innerHTML =
+      '<div style="background:linear-gradient(135deg,var(--primary-soft),var(--purple-soft));border-radius:16px;padding:var(--space-5);margin-bottom:var(--space-4)">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3)">' +
+          '<span style="font-size:14px;font-weight:600;color:var(--text)">🎨 今日图片生成额度</span>' +
+          '<span style="font-size:13px;color:var(--sub)"><b style="color:var(--primary);font-size:18px">' + todayUsed + '</b> / ' + todayTotal + ' 张</span>' +
+        '</div>' +
+        '<div style="background:rgba(255,255,255,0.6);border-radius:999px;height:12px;overflow:hidden">' +
+          '<div style="background:linear-gradient(90deg,var(--primary),var(--purple));height:100%;width:' + pct + '%;border-radius:999px;transition:width 0.5s ease"></div>' +
+        '</div>' +
+        '<div style="margin-top:var(--space-3);font-size:13px;color:var(--sub);display:flex;justify-content:space-between">' +
+          '<span>已使用 ' + pct + '%</span>' +
+          '<span style="color:' + color + ';font-weight:600">剩余 ' + remaining + ' 张</span>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3)">' +
+        '<div style="text-align:center;padding:var(--space-4);background:#fff;border-radius:14px;border:1px solid var(--line)">' +
+          '<div style="font-size:20px;font-weight:700;color:var(--blue)">' + (stats.yesterday || 0) + '</div>' +
+          '<div style="font-size:11px;color:var(--sub)">昨日生成</div>' +
+        '</div>' +
+        '<div style="text-align:center;padding:var(--space-4);background:#fff;border-radius:14px;border:1px solid var(--line)">' +
+          '<div style="font-size:20px;font-weight:700;color:var(--green)">' + (stats.total || 0) + '</div>' +
+          '<div style="font-size:11px;color:var(--sub)">总作品数</div>' +
+        '</div>' +
+        '<div style="text-align:center;padding:var(--space-4);background:#fff;border-radius:14px;border:1px solid var(--line)">' +
+          '<div style="font-size:20px;font-weight:700;color:var(--purple)">' + ((stats.byType?.image || 0) + (stats.byType?.video || 0) + (stats.byType?.drama || 0)) + '</div>' +
+          '<div style="font-size:11px;color:var(--sub)">含视频短剧</div>' +
+        '</div>' +
+      '</div>';
+  } catch (e) { console.error('Failed to load quota:', e); }
+}
+
+async function checkExpiry() {
+  try {
+    const d = await req("/expiry-check");
+    const data = d.data || {};
+    const expiryEl = $("#expiryNotice");
+    if (!expiryEl) return;
+    
+    let html = "";
+    if (data.videoExpiring > 0) {
+      html += '<div class="expiry-notice">' +
+        '<span class="icon">⚠️</span>' +
+        '<span class="text"><b>' + data.videoExpiring + '</b> 个视频即将在 7 天内过期，请及时下载保存</span>' +
+        '<button class="btn btn-sm" onclick="alert(\'即将开放批量下载功能\')" >一键下载</button>' +
+      '</div>';
+    }
+    if (data.imageExpiring > 0) {
+      html += '<div class="expiry-notice">' +
+        '<span class="icon">⚠️</span>' +
+        '<span class="text"><b>' + data.imageExpiring + '</b> 张图片即将在 60 天内过期，请及时下载保存</span>' +
+        '<button class="btn btn-sm" onclick="alert(\'即将开放批量下载功能\')" >一键下载</button>' +
+      '</div>';
+    }
+    
+    expiryEl.innerHTML = html;
+    expiryEl.style.display = html ? "block" : "none";
+  } catch (e) { console.error('Failed to check expiry:', e); }
+}
+
+// 个人中心状态
+let profileType = "all";
+let profilePage = 1;
+const PROFILE_PAGE_SIZE = 24;
+
+async function renderProfile() {
+  if (!ME) return;
+  
+  // 更新头像和基本信息
+  const avatar = ME.username.slice(0, 1).toUpperCase();
+  $("#profileAvatar").textContent = avatar;
+  $("#profileName").textContent = ME.username + (ME.isAdmin ? ' <span class="badge b-ok" style="font-size:11px">管理员</span>' : '');
+  $("#profileJoined").textContent = '加入时间：' + new Date(ME.createdAt || Date.now()).toLocaleDateString('zh-CN');
+  
+  // 加载统计数据
+  try {
+    const [quota, mine] = await Promise.all([
+      req("/quota"),
+      req("/posts/mine")
+    ]);
+    
+    const stats = quota.data || {};
+    const posts = mine || [];
+    
+    // 更新统计数字
+    const today = fmtDate(Date.now());
+    const todayCount = posts.filter(p => fmtDate(p.createdAt) === today).length;
+    const imageCount = posts.filter(p => p.type === 'image').length;
+    const videoCount = posts.filter(p => p.type === 'video').length;
+    
+    $("#profToday").textContent = todayCount;
+    $("#profTotal").textContent = posts.length;
+    $("#profImages").textContent = imageCount;
+    $("#profVideos").textContent = videoCount;
+    
+    // 渲染额度进度条
+    const todayUsed = stats.today || 0;
+    const todayTotal = 4000;
+    const pct = Math.min(100, Math.round(todayUsed / todayTotal * 100));
+    const remaining = todayTotal - todayUsed;
+    let color = 'var(--green)';
+    if (pct > 80) color = 'var(--red)';
+    else if (pct > 50) color = 'var(--amber)';
+    
+    $("#profileQuotaBar").innerHTML =
+      '<div style="background:linear-gradient(135deg,var(--primary-soft),var(--purple-soft));border-radius:16px;padding:var(--space-5)">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3)">' +
+          '<span style="font-size:14px;font-weight:600;color:var(--text)">🎨 今日图片生成额度</span>' +
+          '<span style="font-size:13px;color:var(--sub)"><b style="color:var(--primary);font-size:18px">' + todayUsed + '</b> / ' + todayTotal + ' 张</span>' +
+        '</div>' +
+        '<div style="background:rgba(255,255,255,0.6);border-radius:999px;height:12px;overflow:hidden">' +
+          '<div style="background:linear-gradient(90deg,var(--primary),var(--purple));height:100%;width:' + pct + '%;border-radius:999px;transition:width 0.5s ease"></div>' +
+        '</div>' +
+        '<div style="margin-top:var(--space-3);font-size:13px;color:var(--sub);display:flex;justify-content:space-between">' +
+          '<span>已使用 ' + pct + '%</span>' +
+          '<span style="color:' + color + ';font-weight:600">剩余 ' + remaining + ' 张</span>' +
+        '</div>' +
+      '</div>';
+    
+    // 检查过期内容
+    const expiryCheck = await req("/expiry-check");
+    const edata = expiryCheck.data || {};
+    let expiryHtml = "";
+    if (edata.videoExpiring > 0) {
+      expiryHtml += '<div class="expiry-notice">' +
+        '<span class="icon">🎬</span>' +
+        '<span class="text"><b>' + edata.videoExpiring + '</b> 个视频即将过期（视频保存7天），请及时下载保存</span>' +
+        '<button class="btn btn-sm" onclick="downloadMyMedia(\'video\')">保存</button>' +
+      '</div>';
+    }
+    if (edata.imageExpiring > 0) {
+      expiryHtml += '<div class="expiry-notice">' +
+        '<span class="icon">🖼️</span>' +
+        '<span class="text"><b>' + edata.imageExpiring + '</b> 张图片即将过期（图片保存60天），请及时下载保存</span>' +
+        '<button class="btn btn-sm" onclick="downloadMyMedia(\'image\')">保存</button>' +
+      '</div>';
+    }
+    $("#profileExpiryNotice").innerHTML = expiryHtml;
+    $("#profileExpiryNotice").style.display = expiryHtml ? "block" : "none";
+    
+    // 渲染作品网格
+    profilePage = 1;
+    renderProfileGrid(posts.slice(0, PROFILE_PAGE_SIZE));
+    $("#profileMore").style.display = posts.length > PROFILE_PAGE_SIZE ? "" : "none";
+    
+  } catch (e) {
+    console.error('Failed to render profile:', e);
+  }
+}
+
+function renderProfileGrid(posts) {
+  if (!posts.length) {
+    $("#profileGrid").innerHTML = '<div class="hist-empty" style="padding:40px">还没有作品，去工坊生成第一个吧！</div>';
+    return;
+  }
+  
+  const filtered = profileType === "all" ? posts : posts.filter(p => p.type === profileType);
+  const pagePosts = filtered.slice(0, profilePage * PROFILE_PAGE_SIZE);
+  
+  $("#profileGrid").innerHTML = pagePosts.map(p => {
+    if (p.type === 'image') {
+      const thumbUrl = '/api/image/thumb?url=' + encodeURIComponent(p.result) + '&w=300';
+      return '<div class="img-card">' +
+        '<img data-src="' + thumbUrl + '" alt="作品" loading="lazy">' +
+        '<div class="img-ops">' +
+          '<button class="btn btn-sm" onclick="downloadMedia(' + JSON.stringify(p.result).replace(/"/g, "'") + ')">下载</button>' +
+        '</div>' +
+      '</div>';
+    } else if (p.type === 'video') {
+      return '<div class="img-card">' +
+        '<video src="' + p.result + '" muted preload="metadata"></video>' +
+        '<div class="img-ops">' +
+          '<button class="btn btn-sm" onclick="downloadMedia(' + JSON.stringify(p.result).replace(/"/g, "'") + ')">下载</button>' +
+        '</div>' +
+      '</div>';
+    } else if (p.type === 'drama') {
+      return '<div class="img-card">' +
+        '<video src="' + p.result + '" muted preload="metadata"></video>' +
+        '<div class="img-ops">' +
+          '<button class="btn btn-sm" onclick="downloadMedia(' + JSON.stringify(p.result).replace(/"/g, "'") + ')">下载</button>' +
+        '</div>' +
+      '</div>';
+    } else {
+      return '<div class="card" style="margin-bottom:12px">' +
+        '<div style="font-size:14px;line-height:1.6">' + esc(p.prompt || p.result || '').slice(0, 200) + '...</div>' +
+        '<div style="font-size:12px;color:var(--muted);margin-top:8px">' + fmtDate(p.createdAt) + '</div>' +
+      '</div>';
+    }
+  }).join('');
+  
+  // 懒加载图片
+  setTimeout(() => {
+    document.querySelectorAll('#profileGrid img[data-src]').forEach(img => {
+      const url = img.dataset.src;
+      const realImg = new Image();
+      realImg.onload = () => { img.src = url; img.classList.remove('sq-lazy'); };
+      realImg.onerror = () => { img.alt = '加载失败'; img.style.background = '#f0f1f6'; };
+      img.classList.add('sq-lazy');
+      realImg.src = url;
+    });
+  }, 100);
+}
+
+function loadProfileMore() {
+  profilePage++;
+  req("/posts/mine").then(mine => {
+    const filtered = profileType === "all" ? mine : mine.filter(p => p.type === profileType);
+    renderProfileGrid(filtered.slice(0, profilePage * PROFILE_PAGE_SIZE));
+    if (filtered.length <= profilePage * PROFILE_PAGE_SIZE) {
+      $("#profileMore").style.display = "none";
+    }
+  });
+}
+
+function downloadMyMedia(type) {
+  alert('即将开放批量下载功能，请先手动保存重要作品！');
+}
+
+function downloadExpiring(type) {
+  const msg = type === 'video' ? '视频' : '图片';
+  alert('即将开放批量下载功能，请先手动保存重要作品！');
+}
+
+let histFilter = "all";
+$$("#histFilter .chip").forEach(c => c.addEventListener("click", () => {
+  $$("#histFilter .chip").forEach(x => x.classList.remove("active"));
+  c.classList.add("active");
+  histFilter = c.dataset.f;
+  renderHome();
+}));
+
+// 个人中心筛选
+let profileFilterEl = $("#profileFilter");
+if (profileFilterEl) {
+  profileFilterEl.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => {
+    profileFilterEl.querySelectorAll(".chip").forEach(x => x.classList.remove("active"));
+    c.classList.add("active");
+    profileType = c.dataset.f;
+    profilePage = 1;
+    req("/posts/mine").then(mine => {
+      const filtered = profileType === "all" ? mine : mine.filter(p => p.type === profileType);
+      renderProfileGrid(filtered.slice(0, PROFILE_PAGE_SIZE));
+      $("#profileMore").style.display = filtered.length > PROFILE_PAGE_SIZE ? "" : "none";
+    });
+  }));
+}
+
+function tItemHtml(h, kind) {
+  const m = TYPE_META[h.type];
+  const icBg = kind === "fail" ? "var(--red-soft)" : kind === "pend" ? "var(--amber-soft)" : "var(--blue-soft)";
+  const icFg = kind === "fail" ? "var(--red)" : kind === "pend" ? "var(--amber)" : "var(--blue)";
+  const badge = kind === "fail" ? '<span class="badge b-fail">生成失败</span>' : kind === "pend" ? '<span class="badge b-pend">生成中…</span>' : '<span class="badge b-new">新结果</span>';
+  const act = kind === "fail"
+    ? '<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();retryItem(\'' + h.id + '\')">' + icon("retry", 14) + '重试</button>'
+    : kind === "pend"
+      ? '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();pollVideoById(\'' + h.id + '\')">' + icon("refresh", 14) + '查询状态</button>'
+      : '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();viewItem(\'' + h.id + '\')">' + icon("eye", 14) + '查看</button>';
+  return '<div class="t-item" onclick="viewItem(\'' + h.id + '\')">' +
+    '<div class="t-ic" style="background:' + icBg + ';color:' + icFg + '">' + icon(h.type, 18) + '</div>' +
+    '<div class="t-main"><div class="t-title">' + esc(h.prompt) + '</div><div class="t-sub"><span class="badge ' + m.cls + '">' + m.label + '</span> ' + fmtTime(h.createdAt) + '</div></div>' +
+    '<div class="t-act">' + act + '</div></div>';
+}
+
+function histItemHtml(h) {
+  const m = TYPE_META[h.type];
+  const st = h.status === "done" ? '<span class="badge b-ok">完成</span>'
+    : h.status === "failed" ? '<span class="badge b-fail">失败</span>'
+    : '<span class="badge b-pend">生成中</span>';
+  let preview = esc(h.status === "failed" ? (h.error || "生成失败") : h.prompt);
+  if (h.status === "done" && h.type === "image" && h.result) {
+    const src = h.result.url || h.result.b64;
+    if (src) preview = '<img src="' + src + '" style="width:100%;max-width:260px;border-radius:8px;margin-top:6px">';
+  }
+  const ops =
+    '<button class="btn-icon" title="查看" onclick="event.stopPropagation();viewItem(\'' + h.id + '\')">' + icon("eye", 15) + '</button>' +
+    (h.status === "failed" ? '<button class="btn-icon" title="重试" onclick="event.stopPropagation();retryItem(\'' + h.id + '\')">' + icon("retry", 15) + '</button>' : "") +
+    (h.status === "pending" ? '<button class="btn-icon" title="查询状态" onclick="event.stopPropagation();pollVideoById(\'' + h.id + '\')">' + icon("refresh", 15) + '</button>' : "") +
+    '<button class="btn-icon" title="删除" onclick="event.stopPropagation();deleteItem(\'' + h.id + '\')">' + icon("del", 15) + '</button>';
+  return '<div class="hist-item" id="hi-' + h.id + '" onclick="viewItem(\'' + h.id + '\')">' +
+    '<div class="h-ic" style="background:' + m.bg + ';color:' + m.fg + '">' + icon(h.type, 18) + '</div>' +
+    '<div class="h-main"><div class="h-top"><span class="badge ' + m.cls + '">' + m.label + '</span>' + st + '<span class="h-title">' + esc(h.prompt) + '</span><span class="h-time">' + fmtTime(h.createdAt) + '</span></div>' +
+    '<div class="h-preview">' + preview + '</div></div>' +
+    '<div class="h-ops">' + ops + '</div></div>';
+}
+function renderTypeHist(type, sel) {
+  const list = HIST.filter(h => h.type === type).slice().sort((a, b) => b.createdAt - a.createdAt);
+  $(sel).innerHTML = list.length ? list.slice(0, 8).map(histItemHtml).join("")
+    + (list.length > 8 ? '<div class="hist-empty" style="padding:12px">还有 ' + list.length + ' 条，去「今天 · 我的记录」查看</div>' : "")
+    : '<div class="hist-empty">该类型还没有生成记录</div>';
+}
+
+function viewItem(id) {
+  const h = HIST.find(x => x.id === id); if (!h) return;
+  h.viewed = true; saveHist();
+  switchTab("home", true);
+  renderHome();
+  const el = $("#hi-" + id);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (!el.nextElementSibling || !el.nextElementSibling.classList.contains("hist-detail")) {
+      const det = document.createElement("div");
+      det.className = "hist-detail";
+      det.innerHTML = detailHtml(h);
+      el.insertAdjacentElement("afterend", det);
+    }
+  } else { toast("已跳转到记录列表"); }
+}
+function detailHtml(h) {
+  const m = TYPE_META[h.type];
+  let body = "";
+  if (h.status === "failed") {
+    body = '<div style="color:var(--red)">❌ ' + esc(h.error || "生成失败") + '</div><div style="color:var(--sub);font-size:13px;margin-top:8px">提示词：' + esc(h.prompt) + '</div>';
+  } else if (h.type === "image") {
+    const src = h.result && (h.result.url || h.result.b64);
+    body = src ? '<img src="' + src + '" alt="生成图片">' : esc(h.prompt);
+  } else if (h.type === "video") {
+    if (h.result && h.result.videoUrl) body = '<video src="' + h.result.videoUrl + '" controls playsinline></video>';
+    else if (h.status === "pending") body = '<div style="color:var(--amber)">⏳ 视频生成中…（' + esc(h.prompt) + '）</div>';
+    else body = esc(h.prompt);
+  } else {
+    const t = h.result && h.result.text ? h.result.text : (typeof h.result === "string" ? h.result : "");
+    body = esc(t || h.prompt);
+  }
+  return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="badge ' + m.cls + '">' + m.label + '</span><b style="font-size:14px;flex:1">' + esc(h.prompt) + '</b></div>' + body;
+}
+
+/* ================= 登录 ================= */
+function toggleAuthMode() {
+  authMode = authMode === "login" ? "register" : "login";
+  $("#authTitle").textContent = authMode === "login" ? "登录 AI 创作台" : "注册新账号";
+  $("#authSub").textContent = authMode === "login" ? "登录后可生成内容并参与社区交流" : "注册即可开始创作（首个注册用户为管理员）";
+  const btnLabel = authMode === "login" ? "登录" : "注册并登录";
+  $("#authBtn").innerHTML = `<span>${btnLabel}</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
+  $("#authSwitch").innerHTML = authMode === "login" ? '还没有账号？<a onclick="toggleAuthMode()">立即注册</a>' : '已有账号？<a onclick="toggleAuthMode()">直接登录</a>';
+  $("#authPass").autocomplete = authMode === "login" ? "current-password" : "new-password";
+}
+async function doAuth() {
+  const username = $("#authUser").value.trim();
+  const password = $("#authPass").value;
+  if (!username || !password) { toast("请输入用户名和密码"); return; }
+  const btn = $("#authBtn");
+  btn.disabled = true; btn.innerHTML = '<span>请稍候…</span>';
+  try {
+    const d = await req(authMode === "login" ? "/login" : "/register", { method: "POST", body: JSON.stringify({ username, password }) });
+    TOKEN = d.token; ME = d.user;
+    localStorage.setItem(LS_TOKEN, TOKEN);
+    hideAuth();
+    afterLogin();
+    toast(authMode === "login" ? "欢迎回来，" + ME.username : "注册成功，欢迎加入！");
+  } catch (e) {
+    toast(e.message);
+  }
+  btn.disabled = false; btn.innerHTML = `<span>${authMode === "login" ? "登录" : "注册并登录"}</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
+}
+function doLogout() {
+  showModal("退出登录", "确定要退出当前账号吗？退出后可继续以游客身份浏览广场。", async () => {
+    try { await req("/logout", { method: "POST" }); } catch (e) {}
+    TOKEN = ""; ME = null;
+    localStorage.removeItem(LS_TOKEN);
+    HIST = []; saveHist();
+    renderUserBar(); renderHome();
+    switchTab("community", true);
+    toast("已退出登录，可继续浏览广场");
+  });
+}
+function showAuth() { $("#authMask").classList.remove("hidden"); }
+function hideAuth() { $("#authMask").classList.add("hidden"); }
+
+function renderUserBar() {
+  const profNav = $$(".nav-item[data-tab='profile']");
+  const profMt = $$("\#mTabbar .mt[data-tab='profile']");
+  if (!ME) {
+    $("#sideUserBar").innerHTML =
+      '<div class="u-avatar" style="background:#e8e9f0;color:var(--sub)">?</div>' +
+      '<div class="u-name">游客<span style="display:block;font-size:11px;color:var(--muted);font-weight:400">浏览模式 · 可逛广场</span></div>';
+    $("#btnAdmin").style.display = "none";
+    $("#tbUser").innerHTML =
+      '<button class="btn btn-primary btn-sm" onclick="showAuth()" style="min-height:34px;padding:6px 14px">登录 / 注册</button>';
+    profNav.forEach(el => el.style.display = "none");
+    profMt.forEach(el => el.style.display = "none");
+    return;
+  }
+  const avatar = ME.username.slice(0, 1).toUpperCase();
+  const adminBadge = ME.isAdmin ? '<span class="badge b-ok" style="margin-left:2px">管理员</span>' : "";
+  $("#sideUserBar").innerHTML = (
+    '<div class="u-avatar">' + esc(avatar) + '</div>' +
+    '<div><div class="u-name">' + esc(ME.username) + adminBadge + '</div><div class="u-sub">📝文本/日1500 · 🎨图/日4000 · 🎬视频/日500秒</div></div>'
+  );
+  $("#btnAdmin").style.display = ME.isAdmin ? "" : "none";
+  $("#tbUser").innerHTML = (
+    '<button class="btn-icon" style="display:flex;align-items:center;gap:6px" onclick="openSettings()" title="渠道设置">' +
+    '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg></button>' +
+    '<button class="btn-icon" style="display:flex;align-items:center;gap:6px" onclick="doLogout()" title="退出登录">' +
+    '<span class="u-avatar" style="width:26px;height:26px;font-size:11px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;display:inline-flex;align-items:center;justify-content:center">' + esc(avatar) + '</span>' +
+    '<span style="font-size:13px;color:var(--text);font-weight:600">' + esc(ME.username) + '</span></button>'
+  );
+  profNav.forEach(el => el.style.display = "");
+  profMt.forEach(el => el.style.display = "");
+}
+
+async function afterLogin() {
+  renderUserBar();
+  await loadMine();
+  maybeImportOld();
+  switchTab("home");
+}
+
+async function loadMine() {
+  try {
+    const mine = await req("/posts/mine");
+    HIST = mine.map(p => Object.assign({ viewed: true, id: p.id, type: p.type, prompt: p.prompt, params: p.params, result: p.result, status: p.status, error: p.error || "", createdAt: p.createdAt }));
+    saveHist();
+  } catch (e) {}
+  renderHome();
+}
+
+/* 旧本地记录导入云端 */
+function maybeImportOld() {
+  let old = [];
+  try { old = JSON.parse(localStorage.getItem("wb_aistudio_history") || "[]") || []; } catch (e) {}
+  const localOnly = old.filter(o => !HIST.some(h => h.prompt === o.prompt));
+  const importable = localOnly.filter(o => o.prompt && o.status === "done");
+  if (!importable.length) return;
+  const exist = document.getElementById("importOldCard");
+  if (exist) return;
+  const div = document.createElement("div");
+  div.id = "importOldCard";
+  div.className = "card import-old";
+  div.innerHTML = '<div class="card-title"><span class="dot" style="background:var(--blue)"></span>发现本地旧记录 <span style="font-size:12px;color:var(--muted);font-weight:400">（' + importable.length + ' 条可导入）</span></div>' +
+    '<div class="result-actions"><button class="btn btn-primary btn-sm" onclick="importOldLocal()">' + icon("dl", 14) + '导入云端（发布到广场）</button>' +
+    '<button class="btn btn-ghost btn-sm" onclick="this.closest(\'#importOldCard\').remove()">忽略</button></div>' +
+    '<div class="key-hint" style="font-size:12px;color:var(--muted);margin-top:8px">导入后这些记录会成为你的作品并展示在社区广场，方便大家交流提示词。</div>';
+  const home = $("#tab-home");
+  home.insertBefore(div, home.firstChild);
+}
+async function importOldLocal() {
+  let old = [];
+  try { old = JSON.parse(localStorage.getItem("wb_aistudio_history") || "[]") || []; } catch (e) {}
+  let n = 0;
+  toast("开始导入…");
+  for (const o of old) {
+    if (!o.prompt || o.status !== "done") continue;
+    if (HIST.some(h => h.prompt === o.prompt)) continue;
+    if (!["text", "image", "video", "drama"].includes(o.type)) continue;
+    if (o.type === "image" && !(o.result && (o.result.url || o.result.b64))) continue;
+    if (o.type === "video" && !(o.result && o.result.videoUrl)) continue;
+    try {
+      const result = { text: (o.result && o.result.text) || (typeof o.result === "string" ? o.result : "") };
+      if (o.type === "image") { result.url = o.result.url || ""; result.b64 = o.result.b64 || ""; }
+      if (o.type === "video") { result.videoUrl = o.result.videoUrl || ""; result.taskId = ""; }
+      const post = await req("/posts", { method: "POST", body: JSON.stringify({ type: o.type, prompt: o.prompt, params: o.params || {}, result, status: "done" }) });
+      HIST.unshift(Object.assign({ viewed: true }, post));
+      n++;
+    } catch (e) {}
+  }
+  saveHist();
+  const card = document.getElementById("importOldCard");
+  if (card) card.remove();
+  renderHome();
+  toast("导入完成：新增 " + n + " 条");
+}
+
+/* ================= 生成：文本 ================= */
+const TEXT_TMPL = {
+  "自由创作": s => "请根据以下主题进行创作：\n" + s,
+  "小红书文案": s => "请写一篇小红书种草文案，主题为：\n" + s + "\n\n要求：口语化、有情绪共鸣、适当使用emoji、分段清晰、结尾带话题标签。",
+  "短视频脚本": s => "请写一个短视频脚本，主题为：\n" + s + "\n\n要求：包含 开头钩子(前3秒) / 主体内容 / 结尾引导，标注每个镜头画面和对应台词，节奏紧凑。",
+  "标题创作": s => "请为主题创作 10 个吸引眼球的标题，主题为：\n" + s + "\n\n要求：标题党但不过分夸张，分两类：猎奇类 5 个 + 干货类 5 个。",
+  "设计说明/汇报文案": s => "我是一名室内设计师，请帮我写一份设计说明/方案汇报文案，需求为：\n" + s + "\n\n要求：专业、有逻辑，包含 设计理念 / 空间规划 / 材质色彩 / 灯光氛围 / 收尾总结，适合向客户汇报。"
+};
+function currentTextChip() { const c = document.querySelector("#textChips .chip.active"); return c ? c.dataset.t : "自由创作"; }
+$$("#textChips .chip").forEach(c => c.addEventListener("click", () => {
+  $$("#textChips .chip").forEach(x => x.classList.remove("active")); c.classList.add("active");
+  if (c.dataset.t === "设计说明/汇报文案") $("#textPrompt").value = "为一位 35 岁创业者的 120㎡ 三居室做现代简约风设计，喜欢原木和微水泥质感，希望有独立书房和茶室。";
+}));
+["text", "img", "vid", "drama"].forEach(k => {
+  $("#" + k + "Prompt").addEventListener("input", e => { $("#" + k + "Count").textContent = e.target.value.length; });
+});
+
+function setBusy(btnId, busy, txt) {
+  const b = $("#" + btnId);
+  if (busy) {
+    if (!b.dataset.old) b.dataset.old = b.innerHTML;
+    b.disabled = true;
+    b.classList.add("is-loading");
+    b.innerHTML = '<span class="spinner" style="border-width:2px;border-color:rgba(255,255,255,.4);border-top-color:#fff"></span> ' + txt;
+  } else {
+    b.disabled = false;
+    b.classList.remove("is-loading");
+    b.innerHTML = b.dataset.old || b.innerHTML;
+    b.dataset.old = "";
+    b.style.animation = "successPop 0.3s var(--ease-out)";
+    setTimeout(() => b.style.animation = "", 300);
+  }
+}
+
+async function apiChat(messages, maxTokens) {
+  const d = await req("/proxy/chat", { method: "POST", body: JSON.stringify({ messages, max_tokens: maxTokens || 1500 }) });
+  return d.text;
+}
+
+async function genText() {
+  if (!guardLogin()) return;
+  const prompt = $("#textPrompt").value.trim();
+  if (!prompt) { toast("请输入主题或要求"); return; }
+  const len = $("#textLen").value;
+  const userMsg = TEXT_TMPL[currentTextChip()](prompt) + "\n\n字数控制在 " + len + " 字左右。";
+  setBusy("textBtn", true, "生成中…");
+  $("#textResult").innerHTML = '<div class="loading-tip"><span class="spinner"></span>AI 正在写作，请稍候…</div>';
+  try {
+    const text = await apiChat([
+      { role: "system", content: "你是资深中文内容创作专家，文风自然流畅、有网感，擅长小红书、短视频脚本、短剧剧本、设计说明等多种文体。直接输出正文，不要客套。" },
+      { role: "user", content: userMsg }
+    ], 4000);
+    const post = await req("/posts", { method: "POST", body: JSON.stringify({ type: "text", prompt, params: { chip: currentTextChip(), len }, result: { text }, status: "done" }) });
+    const item = Object.assign({ viewed: false }, post);
+    HIST.push(item); saveHist();
+    $("#textResult").innerHTML = '<div class="result-box">' + esc(text) + '</div>' +
+      '<div class="result-actions">' +
+      '<button class="btn btn-ghost btn-sm" onclick="copyText(this)">' + icon("copy", 14) + '复制</button>' +
+      '<button class="btn btn-ghost btn-sm" onclick="downloadText()">' + icon("dl", 14) + '下载 txt</button>' +
+      '<button class="btn btn-primary btn-sm" onclick="viewItem(\'' + item.id + '\')">' + icon("eye", 14) + '存入历史</button>' +
+      '</div>';
+    toast("生成完成，已发布到广场");
+  } catch (e) {
+    $("#textResult").innerHTML = '<div class="result-box" style="border-color:#f5c2c2;color:var(--red)">生成失败：' + esc(e.message) + '</div>';
+  }
+  setBusy("textBtn", false);
+}
+function copyText(btn) {
+  const t = btn.parentElement.previousElementSibling.textContent;
+  navigator.clipboard.writeText(t).then(() => toast("已复制到剪贴板")).catch(() => toast("复制失败，请手动选择复制"));
+}
+function downloadText() {
+  const box = document.querySelector("#tab-text .result-box");
+  if (!box) return;
+  const blob = new Blob([box.textContent], { type: "text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "AI文案_" + new Date().toISOString().slice(0, 10) + ".txt";
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ================= 生成：短剧 ================= */
+const DRAMA_TMPL = {
+  "甜宠": "甜宠风格：高甜、误会推进、双向暗恋，主打治愈系。",
+  "逆袭爽剧": "逆袭爽剧：开局被碾压、打脸反派、身份反转，节奏快、爽点密。",
+  "悬疑": "悬疑风格：强设定、双线叙事、每集留钩子，最后反转。",
+  "都市情感": "都市情感：现实向、三观碰撞、成长线，情绪拉扯强。",
+  "重生虐渣": "重生虐渣：女主重生复仇、手撕渣男渣女、事业线爽感。"
+};
+function currentDramaChip() { const c = document.querySelector("#dramaChips .chip.active"); return c ? c.dataset.t : "甜宠"; }
+$$("#dramaChips .chip").forEach(c => c.addEventListener("click", () => {
+  $$("#dramaChips .chip").forEach(x => x.classList.remove("active")); c.classList.add("active");
+}));
+
+async function genDrama() {
+  if (!guardLogin()) return;
+  const prompt = $("#dramaPrompt").value.trim();
+  if (!prompt) { toast("请输入短剧主题或设定"); return; }
+  const eps = $("#dramaEpisodes").value;
+  const style = DRAMA_TMPL[currentDramaChip()];
+  setBusy("dramaBtn", true, "生成中…");
+  $("#dramaResult").innerHTML = '<div class="loading-tip"><span class="spinner"></span>AI 正在构思剧本，约需 20-40 秒…</div>';
+  try {
+    const text = await apiChat([
+      { role: "system", content: "你是金牌短剧编剧，精通竖屏短剧节奏（3秒钩子、10秒爽点、结尾反转）。输出结构化剧本：\n【剧名】\n【一句话卖点】\n【人物设定】（主角/反派/配角，含年龄职业性格）\n【故事梗概】\n【分集大纲】（每集一句话钩子）\n【第1集完整剧本】（按场景写：场景/对白/动作/镜头提示）\n风格要求：" + style + "\n直接输出，不要多余解释。" },
+      { role: "user", content: "短剧主题：" + prompt + "\n请输出前 " + eps + " 集大纲和第 1 集完整剧本。" }
+    ], 6000);
+    const post = await req("/posts", { method: "POST", body: JSON.stringify({ type: "drama", prompt, params: { style: currentDramaChip(), eps }, result: { text }, status: "done" }) });
+    const item = Object.assign({ viewed: false }, post);
+    HIST.push(item); saveHist();
+    $("#dramaResult").innerHTML = '<div class="result-box">' + esc(text) + '</div>' +
+      '<div class="result-actions">' +
+      '<button class="btn btn-ghost btn-sm" onclick="copyText(this)">' + icon("copy", 14) + '复制</button>' +
+      '<button class="btn btn-ghost btn-sm" onclick="downloadDrama()">' + icon("dl", 14) + '下载 txt</button>' +
+      '<button class="btn btn-primary btn-sm" onclick="viewItem(\'' + item.id + '\')">' + icon("eye", 14) + '存入历史</button>' +
+      '</div>';
+    toast("剧本生成完成，已发布到广场");
+  } catch (e) {
+    $("#dramaResult").innerHTML = '<div class="result-box" style="border-color:#f5c2c2;color:var(--red)">生成失败：' + esc(e.message) + '</div>';
+  }
+  setBusy("dramaBtn", false);
+}
+function downloadDrama() {
+  const box = document.querySelector("#tab-drama .result-box");
+  if (!box) return;
+  const blob = new Blob([box.textContent], { type: "text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "短剧剧本_" + new Date().toISOString().slice(0, 10) + ".txt";
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ================= 生成：图片 ================= */
+let imgStyle = "写实摄影";
+$$("#imgStyleChips .chip").forEach(c => c.addEventListener("click", () => {
+  $$("#imgStyleChips .chip").forEach(x => x.classList.remove("active"));
+  c.classList.add("active");
+  imgStyle = c.dataset.s;
+}));
+async function expandPrompt() {
+  if (!guardLogin()) return;
+  const desc = $("#imgPrompt").value.trim();
+  if (!desc) { toast("先输入一句简单的画面描述，再点扩展"); return; }
+  const btn = document.querySelector('#tab-image .result-actions .btn');
+  btn.disabled = true; btn.textContent = "扩展中…";
+  try {
+    const text = await apiChat([
+      { role: "system", content: "你是AI绘画提示词专家。把用户简短描述扩展成结构化中文提示词，风格要求见用户输入。格式：主体、场景/环境、光线、构图、画质五部分用逗号分隔，直接输出提示词本体，不要解释、不要换行多余。" },
+      { role: "user", content: "风格：" + imgStyle + "。简短描述：" + desc }
+    ], 900);
+    $("#imgPrompt").value = text.trim();
+    $("#imgCount").textContent = text.trim().length;
+    toast("已扩展为「" + imgStyle + "」风格提示词");
+  } catch (e) {
+    toast("扩展失败：" + e.message);
+  }
+  btn.disabled = false; btn.textContent = "✨ 智能扩展提示词";
+}
+async function apiImage(prompt, size, ratio) {
+  return await req("/proxy/image", { method: "POST", body: JSON.stringify({ prompt, size, ratio }) });
+}
+async function genImage() {
+  if (!guardLogin()) return;
+  const prompt = $("#imgPrompt").value.trim();
+  if (!prompt) { toast("请输入画面描述"); return; }
+  const ratio = $("#imgRatio").value, size = $("#imgSize").value;
+  setBusy("imgBtn", true, "生成中…");
+  $("#imgResult").innerHTML = '<div class="loading-tip"><span class="spinner"></span>AI 正在作画，约需 5-15 秒…</div>';
+  try {
+    const r = await apiImage(prompt, size, ratio);
+    const post = await req("/posts", { method: "POST", body: JSON.stringify({ type: "image", prompt, params: { ratio, size }, result: r, status: "done" }) });
+    const item = Object.assign({ viewed: false }, post);
+    HIST.push(item); saveHist();
+    const src = r.url || r.b64;
+    $("#imgResult").innerHTML =
+      '<div class="img-grid"><div class="img-card"><img src="' + src + '" alt="生成图片" style="width:100%;display:block">' +
+      '<div class="img-ops"><button class="btn btn-primary btn-sm" onclick="downloadImg(this)">' + icon("dl", 14) + '下载</button>' +
+      '<button class="btn btn-ghost btn-sm" onclick="viewItem(\'' + item.id + '\')">' + icon("eye", 14) + '查看</button></div></div></div>';
+    toast("图片生成完成，已发布到广场");
+  } catch (e) {
+    $("#imgResult").innerHTML = '<div class="result-box" style="border-color:#f5c2c2;color:var(--red)">生成失败：' + esc(e.message) + '</div>';
+  }
+  setBusy("imgBtn", false);
+}
+function downloadImg(btn) {
+  const img = btn.closest(".img-card").querySelector("img");
+  if (!img) return;
+  const a = document.createElement("a");
+  a.href = img.src;
+  a.download = "AI图片_" + Date.now() + ".png";
+  a.target = "_blank";
+  a.click();
+}
+
+/* ================= 生成：视频（异步） ================= */
+async function apiVideoCreate(prompt, ratio, len, images) {
+  const body = { prompt, ratio, len };
+  if (Array.isArray(images) && images.length) body.images = images;
+  const d = await req("/proxy/video", { method: "POST", body: JSON.stringify(body) });
+  return d.taskId;
+}
+let refMineList = [];
+async function pickRefImages() {
+  if (!guardLogin()) return;
+  const grid = $("#refPickGrid"), list = $("#refPickList");
+  grid.classList.toggle("hidden");
+  if (grid.classList.contains("hidden")) return;
+  list.innerHTML = '<div class="loading-tip" style="grid-column:1/-1"><span class="spinner"></span>加载我的图片…</div>';
+  try {
+    const mine = await req("/posts/mine");
+    refMineList = mine.filter(p => p.status === "done" && p.type === "image" && (p.result.url || p.result.b64)).slice(0, 24);
+    list.innerHTML = refMineList.length
+      ? refMineList.map((p, i) => {
+          const src = p.result.url || p.result.b64;
+          return '<div class="img-card" data-i="' + i + '" onclick="fillRef(' + i + ')" style="cursor:pointer;aspect-ratio:1/1;overflow:hidden"><img src="' + src + '" style="width:100%;height:100%;object-fit:cover"></div>';
+        }).join("")
+      : '<div class="hist-empty" style="grid-column:1/-1;padding:10px">你还没有图片作品，先去图片工坊生成吧</div>';
+  } catch (e) {
+    list.innerHTML = '<div class="hist-empty" style="grid-column:1/-1;padding:10px">加载失败：' + esc(e.message) + '</div>';
+  }
+}
+function fillRef(i) {
+  const p = refMineList[i];
+  if (!p) return;
+  const src = p.result.url || p.result.b64;
+  for (let k = 1; k <= 4; k++) {
+    const el = $("#refImg" + k);
+    if (!el.value.trim()) { el.value = src; toast("已填入参考图 " + k); break; }
+  }
+}
+async function apiVideoPoll(taskId) {
+  return await req("/proxy/video/" + encodeURIComponent(taskId));
+}
+async function genVideo() {
+  if (!guardLogin()) return;
+  const prompt = $("#vidPrompt").value.trim();
+  if (!prompt) { toast("请输入视频画面描述"); return; }
+  const ratio = $("#vidRatio").value, len = $("#vidLen").value;
+  const images = [1, 2, 3, 4].map(i => $("#refImg" + i).value.trim()).filter(u => /^https?:\/\//.test(u));
+  if (images.length === 1) { toast("参考图需 2-4 张（或清空全部使用纯文本生成）"); return; }
+  setBusy("vidBtn", true, "提交中…");
+  $("#vidResult").innerHTML = '<div class="loading-tip"><span class="spinner"></span>正在提交视频任务…</div>';
+  try {
+    const taskId = await apiVideoCreate(prompt, ratio, len, images);
+    const post = await req("/posts", { method: "POST", body: JSON.stringify({ type: "video", prompt, params: { ratio, len, images }, result: { taskId, videoUrl: "" }, status: "pending" }) });
+    const item = Object.assign({ viewed: false }, post);
+    HIST.push(item); saveHist();
+    setBusy("vidBtn", true, "轮询中…");
+    pollVideoById(item.id, true);
+  } catch (e) {
+    $("#vidResult").innerHTML = '<div class="result-box" style="border-color:#f5c2c2;color:var(--red)">提交失败：' + esc(e.message) + '</div>';
+    setBusy("vidBtn", false);
+  }
+}
+const pollTimers = {};
+function pollVideoById(id, silent) {
+  const h = HIST.find(x => x.id === id);
+  if (!h || h.type !== "video" || !h.result.taskId) return;
+  if (pollTimers[id]) clearInterval(pollTimers[id]);
+  if (h.status === "done") return;
+  h.status = "pending"; saveHist();
+  renderHome(); renderTypeHist("video", "#vidHist");
+  $("#vidResult").innerHTML = '<div class="loading-tip"><span class="spinner"></span>视频生成中（约 2-4 分钟），已排队自动轮询…</div>';
+
+  const tryOnce = async () => {
+    try {
+      const r = await apiVideoPoll(h.result.taskId);
+      if (r.status === "completed" || r.videoUrl) {
+        h.status = "done"; h.result.videoUrl = r.videoUrl || ""; h.viewed = false; saveHist();
+        clearInterval(pollTimers[id]); delete pollTimers[id];
+        try { await req("/posts/" + id, { method: "PATCH", body: JSON.stringify({ result: h.result, status: "done" }) }); } catch (e) {}
+        if (currentTab === "video") {
+          $("#vidResult").innerHTML =
+            '<div class="video-wrap"><video src="' + r.videoUrl + '" controls playsinline></video></div>' +
+            '<div class="result-actions">' +
+            '<button class="btn btn-ghost btn-sm" onclick="downloadVideo(\'' + id + '\')">' + icon("dl", 14) + '下载视频</button>' +
+            '<button class="btn btn-primary btn-sm" onclick="viewItem(\'' + id + '\')">' + icon("eye", 14) + '存入历史</button></div>';
+          toast("视频生成完成！已发布到广场");
+        } else {
+          toast("视频生成完成！已发布到广场");
+        }
+        setBusy("vidBtn", false);
+        renderHome(); renderTypeHist("video", "#vidHist");
+      } else if (r.status === "failed" || r.status === "error") {
+        h.status = "failed"; h.error = "视频生成失败：" + JSON.stringify(r.raw || {}).slice(0, 200); saveHist();
+        clearInterval(pollTimers[id]); delete pollTimers[id];
+        try { await req("/posts/" + id, { method: "PATCH", body: JSON.stringify({ status: "failed", error: h.error }) }); } catch (e) {}
+        setBusy("vidBtn", false);
+        if (currentTab === "video") { $("#vidResult").innerHTML = '<div class="result-box" style="border-color:#f5c2c2;color:var(--red)">' + esc(h.error) + '</div>'; }
+        renderHome(); renderTypeHist("video", "#vidHist");
+      } else {
+        if (currentTab === "video") {
+          const secs = Math.round((Date.now() - h.createdAt) / 1000);
+          $("#vidResult").innerHTML = '<div class="loading-tip"><span class="spinner"></span>视频生成中…已等待 ' + secs + ' 秒（约 2-4 分钟）</div>';
+        }
+      }
+    } catch (e) {
+      h.status = "failed"; h.error = "轮询失败：" + e.message; saveHist();
+      clearInterval(pollTimers[id]); delete pollTimers[id];
+      setBusy("vidBtn", false);
+      if (currentTab === "video") { $("#vidResult").innerHTML = '<div class="result-box" style="border-color:#f5c2c2;color:var(--red)">' + esc(h.error) + '</div>'; }
+      renderHome(); renderTypeHist("video", "#vidHist");
+    }
+  };
+  tryOnce();
+  pollTimers[id] = setInterval(tryOnce, 8000);
+}
+function downloadVideo(id) {
+  const h = HIST.find(x => x.id === id);
+  if (!h || !h.result.videoUrl) return;
+  const a = document.createElement("a");
+  a.href = h.result.videoUrl;
+  a.download = "AI视频_" + new Date().toISOString().slice(0, 10) + ".mp4";
+  a.target = "_blank";
+  a.click();
+}
+
+/* ================= 记录操作 ================= */
+function retryItem(id) {
+  const h = HIST.find(x => x.id === id); if (!h) return;
+  if (h.type === "post") { toast("帖子不支持重试，可直接在社区再发一条"); return; }
+  switchTab(h.type);
+  if (h.type === "text") { $("#textPrompt").value = h.prompt; genText(); }
+  else if (h.type === "drama") { $("#dramaPrompt").value = h.prompt; genDrama(); }
+  else if (h.type === "image") { $("#imgPrompt").value = h.prompt; genImage(); }
+  else if (h.type === "video") { $("#vidPrompt").value = h.prompt; genVideo(); }
+}
+async function deleteItem(id) {
+  showModal("删除记录", "确定删除这条记录吗？（会同时从社区广场移除）", async () => {
+    try { await req("/posts/" + id, { method: "DELETE" }); } catch (e) {}
+    HIST = HIST.filter(x => x.id !== id); saveHist();
+    renderHome();
+    if (currentTab !== "home") renderTypeHist(currentTab, "#" + currentTab + "Hist");
+    toast("已删除该记录");
+  });
+}
+
+/* ================= 社区广场 ================= */
+let commView = "image";
+let squareType = "image", squarePage = 1, squareList = [];
+$$("#commChips .chip").forEach(c => c.addEventListener("click", () => {
+  $$("#commChips .chip").forEach(x => x.classList.remove("active"));
+  c.classList.add("active");
+  commView = c.dataset.c;
+  if (commView === "board") {
+    $("#comm-square").classList.add("hidden");
+    $("#comm-board").classList.remove("hidden");
+    loadMessages();
+  } else {
+    $("#comm-board").classList.add("hidden");
+    $("#comm-square").classList.remove("hidden");
+    squareType = commView;
+    loadSquare(true);
+  }
+}));
+
+async function loadSquare(reset) {
+  if (reset) { squarePage = 1; squareList = []; }
+  if (squareType === "image") { $("#sqTitle").textContent = "图片广场"; $("#sqSub").textContent = "全站用户的图片作品，每条下方的提示词是创作灵感，欢迎借鉴交流"; }
+  else if (squareType === "video") { $("#sqTitle").textContent = "视频广场"; $("#sqSub").textContent = "全站用户的视频作品，每条下方的提示词是创作灵感，欢迎借鉴交流"; }
+  else if (squareType === "drama") { $("#sqTitle").textContent = "短剧广场"; $("#sqSub").textContent = "全站用户的短剧剧本，展开看完整剧本，欢迎借鉴台词与结构"; }
+  else { $("#sqTitle").textContent = "帖子"; $("#sqSub").textContent = "提示词交流、经验分享、求教程，直接发帖就行"; }
+  $("#postComposer").classList.toggle("hidden", squareType !== "post");
+  $("#squareMore").style.display = "none";
+  try {
+    const d = await req("/posts?type=" + squareType + "&page=" + squarePage + "&limit=20");
+    squareList = squareList.concat(d.list);
+    renderSquare();
+    $("#squareMore").style.display = squareList.length < d.total ? "" : "none";
+  } catch (e) {
+    toast("加载失败：" + e.message);
+  }
+}
+function renderSquare() {
+  const grid = $("#squareGrid");
+  if (!squareList.length) {
+    grid.innerHTML = "";
+    $("#squareEmpty").style.display = "block";
+    return;
+  }
+  $("#squareEmpty").style.display = "none";
+  grid.innerHTML = squareList.map(sqCardHtml).join("");
+  // 渲染后重新初始化懒加载
+  setTimeout(initLazyImages, 100);
+}
+function sqCardHtml(p) {
+  if (p.type === "drama") {
+    const text = (p.result && p.result.text) || "";
+    const preview = text.length > 140 ? text.slice(0, 140) + "…" : text;
+    return '<div class="sq-card sq-post">' +
+      '<div class="sq-body">' +
+      '<div class="sq-head"><div class="sq-author"><div class="u-avatar">' + esc((p.username || "?").slice(0, 1).toUpperCase()) + '</div><span>' + esc(p.username) + '</span></div><span class="badge b-tag-d" style="background:var(--orange-soft);color:var(--orange)">短剧</span><span class="sq-time">' + fmtDate(p.createdAt) + '</span></div>' +
+      '<div class="sq-prompt" style="font-weight:700;background:none;border:none;padding:6px 0 2px;font-size:13.5px">' + esc(p.prompt) + '</div>' +
+      '<div class="drama-text" data-full="' + esc(text) + '" data-open="0"><div class="sq-prompt" style="margin-top:0">' + esc(preview) + '</div>' +
+      '<div class="result-actions" style="margin-top:8px"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();toggleDrama(this)">' + icon("eye", 13) + (text.length > 140 ? '展开剧本' : '') + '</button>' +
+      '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();copyDrama(this)">' + icon("copy", 13) + '复制</button></div></div>' +
+      '</div></div>';
+  }
+  if (p.type === "post") {
+    const media = p.params && p.params.media;
+    const mediaHtml = media
+      ? (media.kind === "video"
+          ? '<div class="sq-media" style="aspect-ratio:16/9"><video src="' + media.url + '" controls playsinline preload="metadata"></video></div>'
+          : '<div class="sq-media" style="cursor:pointer" onclick="openLightbox(\''+media.url+'\',\''+esc(p.prompt)+'\')"><img data-src="'+imgThumbUrl(media.url)+'" alt="" class="sq-lazy" loading="lazy"></div>')
+      : "";
+    return '<div class="sq-card sq-post">' +
+      mediaHtml +
+      '<div class="sq-body">' +
+      '<div class="sq-head"><div class="sq-author"><div class="u-avatar">' + esc((p.username || "?").slice(0, 1).toUpperCase()) + '</div><span>' + esc(p.username) + '</span></div><span class="badge b-tag-d" style="background:var(--green-soft);color:var(--green)">帖子</span><span class="sq-time">' + fmtDate(p.createdAt) + '</span></div>' +
+      '<div class="sq-prompt" style="white-space:pre-wrap">' + esc(p.prompt) + '</div>' +
+      '</div></div>';
+  }
+  const src = p.result && (p.result.url || p.result.b64);
+  const video = p.type === "video";
+  const media = video
+    ? (p.result.videoUrl ? '<video src="' + p.result.videoUrl + '" controls playsinline preload="metadata"></video>' : '<div class="expired">视频生成中或链接已过期</div>')
+    : (src ? '<img data-src="' + imgThumbUrl(src) + '" alt="' + esc(p.prompt) + '" class="sq-lazy" loading="lazy" onclick="openLightbox(\'' + esc(src) + '\',\'' + esc(p.prompt) + '\')" style="cursor:zoom-in">' : '<div class="expired">图片链接已过期</div>');
+  const badge = '<span class="badge ' + (video ? "b-tag-v" : "b-tag-i") + '">' + (video ? "视频" : "图片") + '</span>';
+  return '<div class="sq-card">' +
+    '<div class="sq-media">' + media + '<span class="sq-badge">' + badge + '</span></div>' +
+    '<div class="sq-body">' +
+    '<div class="sq-head"><div class="sq-author"><div class="u-avatar">' + esc((p.username || "?").slice(0, 1).toUpperCase()) + '</div><span>' + esc(p.username) + '</span></div><span class="sq-time">' + fmtDate(p.createdAt) + '</span></div>' +
+    '<div class="sq-prompt" title="提示词（点击复制）" onclick="copyPrompt(this)"><span>' + esc(p.prompt) + '</span><button class="btn-icon sq-copy" onclick="event.stopPropagation();copyPrompt(this)">' + icon("copy", 14) + '</button></div>' +
+    '</div></div>';
+}
+function copyPrompt(el) {
+  const box = el.classList.contains("sq-prompt") ? el : el.closest(".sq-prompt");
+  const text = box.querySelector("span").textContent;
+  navigator.clipboard.writeText(text).then(() => toast("提示词已复制，快去试试吧")).catch(() => toast("复制失败"));
+}
+function toggleDrama(btn) {
+  const wrap = btn.closest(".drama-text");
+  const full = wrap.dataset.full || "";
+  const open = wrap.dataset.open === "1";
+  const box = wrap.querySelector(".sq-prompt");
+  box.innerHTML = open ? esc(full.slice(0, 140) + "…") : esc(full);
+  wrap.dataset.open = open ? "0" : "1";
+  btn.innerHTML = icon("eye", 13) + (open && full.length > 140 ? "展开剧本" : "收起剧本");
+}
+function copyDrama(btn) {
+  const wrap = btn.closest(".drama-text");
+  navigator.clipboard.writeText(wrap.dataset.full || "").then(() => toast("剧本已复制")).catch(() => toast("复制失败"));
+}
+$("#squareMore").addEventListener("click", () => { squarePage++; loadSquare(false); });
+
+/* 发帖 */
+let selPostMedia = null; // {kind:'image'|'video', url}
+let myMediaList = [];
+async function togglePostMedia() {
+  const picker = $("#postMediaPicker");
+  if (!picker.classList.contains("hidden")) { picker.classList.add("hidden"); return; }
+  picker.classList.remove("hidden");
+  const grid = $("#postMediaGrid");
+  grid.innerHTML = '<div class="loading-tip" style="grid-column:1/-1"><span class="spinner"></span>加载我的作品…</div>';
+  try {
+    const mine = await req("/posts/mine");
+    myMediaList = mine.filter(p => p.status === "done" && (
+      (p.type === "image" && (p.result.url || p.result.b64)) ||
+      (p.type === "video" && p.result.videoUrl)
+    )).slice(0, 18);
+    grid.innerHTML = myMediaList.length
+      ? myMediaList.map((p, i) => {
+          const src = p.type === "image" ? (p.result.url || p.result.b64) : p.result.videoUrl;
+          return '<div class="img-card" data-i="' + i + '" onclick="pickPostMedia(' + i + ')" style="cursor:pointer;aspect-ratio:1/1;overflow:hidden">' +
+            (p.type === "video" ? '<video src="' + src + '" preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>' : '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover">') +
+            '</div>';
+        }).join("")
+      : '<div class="hist-empty" style="grid-column:1/-1;padding:14px">你还没有生成过图片/视频，先去工坊生成吧</div>';
+  } catch (e) {
+    grid.innerHTML = '<div class="hist-empty" style="grid-column:1/-1;padding:14px">加载失败：' + esc(e.message) + '</div>';
+  }
+}
+function pickPostMedia(i) {
+  const p = myMediaList[i];
+  if (!p) return;
+  selPostMedia = { kind: p.type, url: p.type === "image" ? (p.result.url || p.result.b64) : p.result.videoUrl };
+  $("#postMediaPicker").classList.add("hidden");
+  $("#postMediaPreview").classList.remove("hidden");
+  $("#postMediaPreview").innerHTML =
+    '<div class="sq-head" style="margin-bottom:6px"><span class="badge b-ok">已选' + (selPostMedia.kind === "video" ? "视频" : "图片") + '</span><button class="btn-icon" style="margin-left:auto" onclick="clearPostMedia()" title="移除">' + icon("del", 14) + '</button></div>' +
+    (selPostMedia.kind === "video"
+      ? '<video src="' + selPostMedia.url + '" controls preload="metadata" style="max-width:100%;max-height:200px;border-radius:10px"></video>'
+      : '<img src="' + selPostMedia.url + '" style="max-width:100%;max-height:200px;border-radius:10px">');
+}
+function clearPostMedia() {
+  selPostMedia = null;
+  $("#postMediaPreview").classList.add("hidden");
+  $("#postMediaPreview").innerHTML = "";
+}
+async function publishPost() {
+  if (!guardLogin()) return;
+  const content = $("#postContent").value.trim();
+  if (!content) { toast("写点内容再发布吧"); return; }
+  if (content.length > 500) { toast("内容最多 500 字"); return; }
+  const btn = document.querySelector('#postComposer .btn-primary');
+  btn.disabled = true; btn.textContent = "发布中…";
+  try {
+    const params = selPostMedia ? { media: selPostMedia } : {};
+    const post = await req("/posts", { method: "POST", body: JSON.stringify({ type: "post", prompt: content, params, result: {}, status: "done" }) });
+    $("#postContent").value = "";
+    clearPostMedia();
+    HIST.unshift(Object.assign({ viewed: true }, post)); saveHist();
+    loadSquare(true);
+    toast("发布成功！");
+  } catch (e) { toast("发布失败：" + e.message); }
+  btn.disabled = false; btn.textContent = "发布";
+}
+
+/* 留言板 */
+async function loadMessages() {
+  const list = $("#boardList");
+  list.innerHTML = '<div class="loading-tip"><span class="spinner"></span>加载留言…</div>';
+  try {
+    const d = await req("/messages?limit=50");
+    const msgs = d.list;
+    list.innerHTML = msgs.length ? msgs.map(msgHtml).join("") : '<div class="hist-empty">还没有留言，来说第一句吧</div>';
+  } catch (e) {
+    list.innerHTML = '<div class="hist-empty">加载失败：' + esc(e.message) + '</div>';
+  }
+}
+function msgHtml(m) {
+  const canDel = ME && (ME.username === m.username || ME.isAdmin);
+  const delBtn = canDel ? '<button class="btn-icon" style="margin-left:auto" onclick="deleteMsg(\'' + m.id + '\',\'' + esc(m.username) + '\')" title="删除">' + icon("del", 14) + '</button>' : "";
+  return '<div class="board-box">' +
+    '<div class="b-top"><div class="u-avatar" style="width:26px;height:26px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">' + esc((m.username || "?").slice(0, 1).toUpperCase()) + '</div>' +
+    '<div class="b-name">' + esc(m.username) + '</div><span class="b-time">' + fmtTime(m.createdAt) + '</span>' + delBtn + '</div>' +
+    '<div class="b-content">' + esc(m.content) + '</div></div>';
+}
+async function sendMessage() {
+  if (!guardLogin()) return;
+  const input = $("#boardInput");
+  const content = input.value.trim();
+  if (!content) { toast("说点什么吧"); return; }
+  try {
+    await req("/messages", { method: "POST", body: JSON.stringify({ content }) });
+    input.value = "";
+    loadMessages();
+    toast("留言成功");
+  } catch (e) { toast(e.message); }
+}
+async function deleteMsg(id, username) {
+  const mine = ME && (ME.username === username || ME.isAdmin);
+  if (!mine) { toast("只能删除自己的留言"); return; }
+  showModal("删除留言", "确定删除这条留言吗？", async () => {
+    try { await req("/messages/" + id, { method: "DELETE" }); loadMessages(); toast("已删除"); }
+    catch (e) { toast(e.message); }
+  });
+}
+
+/* ================= 渠道设置 ================= */
+let chAllowUser = true;
+async function openSettings() {
+  if (!guardLogin()) return;
+  $("#drawer").classList.add("show");
+  $("#drawerMask").classList.add("show");
+  try {
+    const d = await req("/channels");
+    chAllowUser = d.allowUserChannels;
+    renderChannelsUser(d.list);
+  } catch (e) {
+    $("#chGroups").innerHTML = '<div class="hist-empty">加载失败：' + esc(e.message) + '</div>';
+  }
+}
+function closeSettings() { $("#drawer").classList.remove("show"); $("#drawerMask").classList.remove("show"); }
+function renderChannelsUser(list) {
+  const kindMeta = { text: ["文本", "var(--blue)"], image: ["图片", "var(--purple)"], video: ["视频", "var(--pink)"] };
+  let html = "";
+  ["text", "image", "video"].forEach(kind => {
+    const items = list.filter(c => c.kind === kind && (c.isPreset ? c.enabled : c.owned));
+    if (!items.length) return;
+    html += '<div style="font-size:13px;font-weight:700;color:var(--sub);margin:12px 0 8px">' + kindMeta[kind][0] + '渠道</div>';
+    items.forEach(c => {
+      const st = c.isPreset
+        ? (c.hasKey ? '<span class="badge b-ok">启用中</span>' : '<span class="badge b-pend">未配 Key</span>')
+        : (c.enabled ? '<span class="badge b-ok">我的 · 启用</span>' : '<span class="badge b-pend">我的 · 停用</span>');
+      const ops = c.owned && !c.isPreset
+        ? '<div class="ch-ops"><button class="btn btn-ghost btn-sm" onclick="toggleMyChannel(\'' + c.id + '\')">' + (c.enabled ? '停用' : '启用') + '</button><button class="btn btn-danger btn-sm" onclick="delMyChannel(\'' + c.id + '\')">删除</button></div>'
+        : '';
+      html += '<div class="ch-card"><div class="ch-top"><span style="color:' + kindMeta[kind][1] + ';font-weight:700">' + kindMeta[kind][0] + '</span><span class="ch-name">' + esc(c.name) + '</span>' + st + '</div>' +
+        '<div class="ch-model">' + esc(c.model) + '</div>' +
+        (c.note ? '<div class="ch-note">' + esc(c.note) + '</div>' : '') + ops + '</div>';
+    });
+  });
+  $("#chGroups").innerHTML = html || '<div class="hist-empty">暂无可用的渠道</div>';
+
+  let zone = "";
+  if (chAllowUser) {
+    zone = '<div class="card-title" style="font-size:15px;margin-bottom:6px"><span class="dot" style="background:var(--green)"></span>添加我的渠道</div>' +
+      '<div class="key-hint" style="font-size:12px;color:var(--muted);margin-bottom:10px">接入 OpenAI 兼容接口（文本/图片/视频），Key 仅存服务器、仅你自己可用。添加后自动优先使用。</div>' +
+      '<div style="display:flex;flex-direction:column;gap:10px">' +
+      '<input id="myChName" placeholder="渠道名称，如：我的 Gemini" style="font-size:15px">' +
+      '<select id="myChKind"><option value="text">文本</option><option value="image">图片</option><option value="video">视频</option></select>' +
+      '<input id="myChBase" placeholder="Base URL，如 https://api.example.com/v1" style="font-size:15px">' +
+      '<input id="myChModel" placeholder="模型名，如 gpt-4o-mini" style="font-size:15px">' +
+      '<input id="myChKey" type="password" placeholder="API Key（sk-...）" style="font-size:15px">' +
+      '<button class="btn btn-primary block" onclick="addMyChannel()">添加渠道</button>' +
+      '</div>';
+  } else {
+    zone = '<div class="hist-empty" style="padding:16px">管理员已关闭自定义渠道功能，如有需要请联系管理员。</div>';
+  }
+  $("#chUserZone").innerHTML = zone;
+}
+async function addMyChannel() {
+  const body = {
+    name: $("#myChName").value.trim(),
+    kind: $("#myChKind").value,
+    baseUrl: $("#myChBase").value.trim(),
+    model: $("#myChModel").value.trim(),
+    apiKey: $("#myChKey").value.trim()
+  };
+  if (!body.name || !body.baseUrl || !body.model || !body.apiKey) { toast("请填写完整的渠道信息"); return; }
+  try {
+    await req("/channels", { method: "POST", body: JSON.stringify(body) });
+    toast("渠道已添加，生成时将优先使用");
+    openSettings();
+  } catch (e) { toast(e.message); }
+}
+async function toggleMyChannel(id) {
+  try {
+    const d = await req("/channels");
+    const c = d.list.find(x => x.id === id);
+    if (!c) return;
+    await req("/channels/" + id, { method: "PATCH", body: JSON.stringify({ enabled: !c.enabled }) });
+    openSettings();
+  } catch (e) { toast(e.message); }
+}
+async function delMyChannel(id) {
+  showModal("删除我的渠道", "确定删除这个自定义渠道吗？（Key 将一并删除）", async () => {
+    try { await req("/channels/" + id, { method: "DELETE" }); toast("已删除"); openSettings(); }
+    catch (e) { toast(e.message); }
+  });
+}
+
+/* ================= 图片懒加载优化 ================= */
+function initLazyImages() {
+  const lazyImages = document.querySelectorAll('img[data-src]');
+  if (!lazyImages.length) return;
+
+  lazyImages.forEach((img, i) => {
+    if (!img.dataset.src) return;
+    const thumbUrl = img.dataset.src;
+    const parent = img.closest('.sq-media');
+
+    // 立即设置加载状态
+    img.classList.add('sq-lazy');
+    if (parent) {
+      if (!parent.querySelector('.sq-loading')) {
+        const loader = document.createElement('div');
+        loader.className = 'sq-loading';
+        parent.appendChild(loader);
+      }
+    }
+
+    // 创建临时图片预加载
+    const realImg = new Image();
+    realImg.onload = () => {
+      img.src = thumbUrl;
+      img.classList.remove('sq-lazy');
+      if (parent) {
+        const loader = parent.querySelector('.sq-loading');
+        if (loader) loader.remove();
+      }
+    };
+    realImg.onerror = () => {
+      img.style.display = 'none';
+      if (parent) {
+        const loader = parent.querySelector('.sq-loading');
+        if (loader) loader.remove();
+        const exp = document.createElement('div');
+        exp.className = 'expired';
+        exp.textContent = '图片加载失败';
+        parent.appendChild(exp);
+      }
+    };
+    realImg.src = thumbUrl;
+  });
+}
+
+/* ================= 版本检查（推送更新提示） ================= */
+const LS_SEEN_VER = "wb_aistudio_seen_ver";
+async function checkVersion() {
+  try {
+    const d = await req("/version");
+    const ver = d.version || "1.0.0";
+    document.querySelectorAll("[data-ver]").forEach(el => { el.textContent = "v" + ver; });
+    const seen = localStorage.getItem(LS_SEEN_VER);
+    if (seen !== ver) {
+      localStorage.setItem(LS_SEEN_VER, ver);
+      const first = (d.changelog && d.changelog[0]) || "";
+      if (seen !== null) { // 老用户升级才提示，首次访问不打扰
+        toast("✨ 已更新到 v" + ver + (first ? "：" + first : ""));
+      }
+    }
+  } catch (e) {}
+}
+
+/* ================= 模态 ================= */
+let modalCb = null;
+function showModal(title, msg, cb) {
+  $("#modalTitle").textContent = title;
+  $("#modalMsg").textContent = msg;
+  modalCb = cb;
+  $("#modalMask").classList.add("show");
+}
+function closeModal() { $("#modalMask").classList.remove("show"); modalCb = null; }
+$("#modalOkBtn").addEventListener("click", () => { const cb = modalCb; closeModal(); if (cb) cb(); });
+$("#modalMask").addEventListener("click", e => { if (e.target.id === "modalMask") closeModal(); });
+
+/* ================= 图片预览 Lightbox ================= */
+function openLightbox(url, title) {
+  const lb = $("#imgLightbox");
+  const img = $("#lightboxImg");
+  const info = $("#lightboxInfo");
+  const dl = $("#lightboxDownload");
+  img.src = url;
+  dl.href = url;
+  dl.download = "原图_" + Date.now() + ".jpg";
+  info.textContent = title || "";
+  lb.classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+function closeLightbox(e) {
+  if (e && e.target !== $("#imgLightbox")) return;
+  $("#imgLightbox").classList.remove("show");
+  document.body.style.overflow = "";
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeLightbox(); });
+
+/* ================= 初始化 ================= */
+(async function init() {
+  if (TOKEN) {
+    try {
+      ME = await req("/me");
+      hideAuth();
+      renderUserBar();
+      await loadMine();
+      maybeImportOld();
+      checkVersion();
+    } catch (e) {
+      TOKEN = ""; localStorage.removeItem(LS_TOKEN); ME = null;
+      renderUserBar();
+      checkVersion();
+    }
+  } else {
+    ME = null;
+    renderUserBar();
+    checkVersion();
+  }
+  renderHome();
+  // 初始化图片懒加载
+  initLazyImages();
+  // 恢复上次浏览的页面；游客或无记录时默认进入社区广场
+  const restoreTab = ME ? (currentTab || "home") : "community";
+  switchTab(restoreTab, true);
+})();
+</script>
+</body>
+</html>
