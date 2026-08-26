@@ -1296,6 +1296,13 @@ function imgThumbUrl(url, w) {
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function safeMediaUrl(s) {
+  s = String(s || "");
+  return /^https?:\/\/[^\s"'<>]+$/i.test(s) || /^data:image\/(?:png|jpe?g|webp);base64,[a-z0-9+/=]+$/i.test(s) ? s : "";
+}
+function jsArg(s) {
+  return String(s || "").replace(/\\/g, "\\\\").replace(/'/g, "\\x27").replace(/</g, "\\x3c").replace(/>/g, "\\x3e").replace(/[\r\n]/g, " ");
+}
 function fmtTime(t) {
   const d = new Date(t), now = new Date();
   const hm = d.getHours().toString().padStart(2, "0") + ":" + d.getMinutes().toString().padStart(2, "0");
@@ -1585,23 +1592,23 @@ function renderProfileGrid(posts) {
   
   $("#profileGrid").innerHTML = pagePosts.map(p => {
     // 提取正确的 URL
-    const mediaUrl = p.result && typeof p.result === 'object'
+    const mediaUrl = safeMediaUrl(p.result && typeof p.result === 'object'
       ? (p.result.url || p.result.videoUrl || '')
-      : (p.result || '');
+      : (p.result || ''));
 
     if (p.type === 'image') {
       const thumbUrl = mediaUrl ? '/api/image/thumb?url=' + encodeURIComponent(mediaUrl) + '&w=300' : '';
       return '<div class="img-card">' +
         (thumbUrl ? '<img data-src="' + thumbUrl + '" alt="作品" loading="lazy">' : '<div class="sq-lazy" style="height:200px;background:#f0f1f6"></div>') +
         '<div class="img-ops">' +
-          (mediaUrl ? '<button class="btn btn-sm" onclick="downloadMedia(\'' + mediaUrl.replace(/'/g, "\\'") + '\')">下载</button>' : '') +
+          (mediaUrl ? '<button class="btn btn-sm" onclick="downloadMedia(\'' + jsArg(mediaUrl) + '\')">下载</button>' : '') +
         '</div>' +
       '</div>';
     } else if (p.type === 'video' || p.type === 'drama') {
       return '<div class="img-card">' +
-        (mediaUrl ? '<video src="' + mediaUrl + '" muted preload="metadata"></video>' : '<div style="height:200px;background:#f0f1f6"></div>') +
+        (mediaUrl ? '<video src="' + esc(mediaUrl) + '" muted preload="metadata"></video>' : '<div style="height:200px;background:#f0f1f6"></div>') +
         '<div class="img-ops">' +
-          (mediaUrl ? '<button class="btn btn-sm" onclick="downloadMedia(\'' + mediaUrl.replace(/'/g, "\\'") + '\')">下载</button>' : '') +
+          (mediaUrl ? '<button class="btn btn-sm" onclick="downloadMedia(\'' + jsArg(mediaUrl) + '\')">下载</button>' : '') +
         '</div>' +
       '</div>';
     } else {
@@ -1705,8 +1712,8 @@ function histItemHtml(h) {
     : '<span class="badge b-pend">生成中</span>';
   let preview = esc(h.status === "failed" ? (h.error || "生成失败") : h.prompt);
   if (h.status === "done" && h.type === "image" && h.result) {
-    const src = h.result.url || h.result.b64;
-    if (src) preview = '<img src="' + src + '" style="width:100%;max-width:260px;border-radius:8px;margin-top:6px">';
+    const src = safeMediaUrl(h.result.url || h.result.b64);
+    if (src) preview = '<img src="' + esc(src) + '" style="width:100%;max-width:260px;border-radius:8px;margin-top:6px">';
   }
   const ops =
     '<button class="btn-icon" title="查看" onclick="event.stopPropagation();viewItem(\'' + h.id + '\')">' + icon("eye", 15) + '</button>' +
@@ -1748,10 +1755,10 @@ function detailHtml(h) {
   if (h.status === "failed") {
     body = '<div style="color:var(--red)">❌ ' + esc(h.error || "生成失败") + '</div><div style="color:var(--sub);font-size:13px;margin-top:8px">提示词：' + esc(h.prompt) + '</div>';
   } else if (h.type === "image") {
-    const src = h.result && (h.result.url || h.result.b64);
-    body = src ? '<img src="' + src + '" alt="生成图片">' : esc(h.prompt);
+    const src = safeMediaUrl(h.result && (h.result.url || h.result.b64));
+    body = src ? '<img src="' + esc(src) + '" alt="生成图片">' : esc(h.prompt);
   } else if (h.type === "video") {
-    if (h.result && h.result.videoUrl) body = '<video src="' + h.result.videoUrl + '" controls playsinline></video>';
+    if (h.result && safeMediaUrl(h.result.videoUrl)) body = '<video src="' + esc(safeMediaUrl(h.result.videoUrl)) + '" controls playsinline></video>';
     else if (h.status === "pending") body = '<div style="color:var(--amber)">⏳ 视频生成中…（' + esc(h.prompt) + '）</div>';
     else body = esc(h.prompt);
   } else {
@@ -2070,9 +2077,9 @@ async function genImage() {
     const post = await req("/posts", { method: "POST", body: JSON.stringify({ type: "image", prompt, params: { ratio, size }, result: r, status: "done" }) });
     const item = Object.assign({ viewed: false }, post);
     HIST.push(item); saveHist();
-    const src = r.url || r.b64;
+    const src = safeMediaUrl(r.url || r.b64);
     $("#imgResult").innerHTML =
-      '<div class="img-grid"><div class="img-card"><img src="' + src + '" alt="生成图片" style="width:100%;display:block">' +
+      '<div class="img-grid"><div class="img-card"><img src="' + esc(src) + '" alt="生成图片" style="width:100%;display:block">' +
       '<div class="img-ops"><button class="btn btn-primary btn-sm" onclick="downloadImg(this)">' + icon("dl", 14) + '下载</button>' +
       '<button class="btn btn-ghost btn-sm" onclick="viewItem(\'' + item.id + '\')">' + icon("eye", 14) + '查看</button></div></div></div>';
     toast("图片生成完成，已发布到广场");
@@ -2110,8 +2117,8 @@ async function pickRefImages() {
     refMineList = mine.filter(p => p.status === "done" && p.type === "image" && (p.result.url || p.result.b64)).slice(0, 24);
     list.innerHTML = refMineList.length
       ? refMineList.map((p, i) => {
-          const src = p.result.url || p.result.b64;
-          return '<div class="img-card" data-i="' + i + '" onclick="fillRef(' + i + ')" style="cursor:pointer;aspect-ratio:1/1;overflow:hidden"><img src="' + src + '" style="width:100%;height:100%;object-fit:cover"></div>';
+          const src = safeMediaUrl(p.result.url || p.result.b64);
+          return '<div class="img-card" data-i="' + i + '" onclick="fillRef(' + i + ')" style="cursor:pointer;aspect-ratio:1/1;overflow:hidden"><img src="' + esc(src) + '" style="width:100%;height:100%;object-fit:cover"></div>';
         }).join("")
       : '<div class="hist-empty" style="grid-column:1/-1;padding:10px">你还没有图片作品，先去图片工坊生成吧</div>';
   } catch (e) {
@@ -2121,7 +2128,7 @@ async function pickRefImages() {
 function fillRef(i) {
   const p = refMineList[i];
   if (!p) return;
-  const src = p.result.url || p.result.b64;
+  const src = safeMediaUrl(p.result.url || p.result.b64);
   for (let k = 1; k <= 4; k++) {
     const el = $("#refImg" + k);
     if (!el.value.trim()) { el.value = src; toast("已填入参考图 " + k); break; }
@@ -2170,7 +2177,7 @@ function pollVideoById(id, silent) {
         try { await req("/posts/" + id, { method: "PATCH", body: JSON.stringify({ result: h.result, status: "done" }) }); } catch (e) {}
         if (currentTab === "video") {
           $("#vidResult").innerHTML =
-            '<div class="video-wrap"><video src="' + r.videoUrl + '" controls playsinline></video></div>' +
+            '<div class="video-wrap"><video src="' + esc(safeMediaUrl(r.videoUrl)) + '" controls playsinline></video></div>' +
             '<div class="result-actions">' +
             '<button class="btn btn-ghost btn-sm" onclick="downloadVideo(\'' + id + '\')">' + icon("dl", 14) + '下载视频</button>' +
             '<button class="btn btn-primary btn-sm" onclick="viewItem(\'' + id + '\')">' + icon("eye", 14) + '存入历史</button></div>';
@@ -2299,8 +2306,8 @@ function sqCardHtml(p) {
     const media = p.params && p.params.media;
     const mediaHtml = media
       ? (media.kind === "video"
-          ? '<div class="sq-media" style="aspect-ratio:16/9"><video src="' + media.url + '" controls playsinline preload="metadata"></video></div>'
-          : '<div class="sq-media" style="cursor:pointer" onclick="openLightbox(\''+media.url+'\',\''+esc(p.prompt)+'\')"><img data-src="'+imgThumbUrl(media.url)+'" alt="" class="sq-lazy" loading="lazy"></div>')
+          ? '<div class="sq-media" style="aspect-ratio:16/9"><video src="' + esc(safeMediaUrl(media.url)) + '" controls playsinline preload="metadata"></video></div>'
+          : '<div class="sq-media" style="cursor:pointer" onclick="openLightbox(\''+jsArg(safeMediaUrl(media.url))+'\',\''+jsArg(p.prompt)+'\')"><img data-src="'+esc(imgThumbUrl(safeMediaUrl(media.url)))+'" alt="" class="sq-lazy" loading="lazy"></div>')
       : "";
     return '<div class="sq-card sq-post">' +
       mediaHtml +
@@ -2309,11 +2316,11 @@ function sqCardHtml(p) {
       '<div class="sq-prompt" style="white-space:pre-wrap">' + esc(p.prompt) + '</div>' +
       '</div></div>';
   }
-  const src = p.result && (p.result.url || p.result.b64);
+  const src = safeMediaUrl(p.result && (p.result.url || p.result.b64));
   const video = p.type === "video";
   const media = video
-    ? (p.result.videoUrl ? '<video src="' + p.result.videoUrl + '" controls playsinline preload="metadata"></video>' : '<div class="expired">视频生成中或链接已过期</div>')
-    : (src ? '<img data-src="' + imgThumbUrl(src) + '" alt="' + esc(p.prompt) + '" class="sq-lazy" loading="lazy" onclick="openLightbox(\'' + esc(src) + '\',\'' + esc(p.prompt) + '\')" style="cursor:zoom-in">' : '<div class="expired">图片链接已过期</div>');
+    ? (safeMediaUrl(p.result.videoUrl) ? '<video src="' + esc(safeMediaUrl(p.result.videoUrl)) + '" controls playsinline preload="metadata"></video>' : '<div class="expired">视频生成中或链接已过期</div>')
+    : (src ? '<img data-src="' + esc(imgThumbUrl(src)) + '" alt="' + esc(p.prompt) + '" class="sq-lazy" loading="lazy" onclick="openLightbox(\'' + jsArg(src) + '\',\'' + jsArg(p.prompt) + '\')" style="cursor:zoom-in">' : '<div class="expired">图片链接已过期</div>');
   const badge = '<span class="badge ' + (video ? "b-tag-v" : "b-tag-i") + '">' + (video ? "视频" : "图片") + '</span>';
   return '<div class="sq-card">' +
     '<div class="sq-media">' + media + '<span class="sq-badge">' + badge + '</span></div>' +
@@ -2359,9 +2366,9 @@ async function togglePostMedia() {
     )).slice(0, 18);
     grid.innerHTML = myMediaList.length
       ? myMediaList.map((p, i) => {
-          const src = p.type === "image" ? (p.result.url || p.result.b64) : p.result.videoUrl;
+          const src = safeMediaUrl(p.type === "image" ? (p.result.url || p.result.b64) : p.result.videoUrl);
           return '<div class="img-card" data-i="' + i + '" onclick="pickPostMedia(' + i + ')" style="cursor:pointer;aspect-ratio:1/1;overflow:hidden">' +
-            (p.type === "video" ? '<video src="' + src + '" preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>' : '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover">') +
+            (p.type === "video" ? '<video src="' + esc(src) + '" preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>' : '<img src="' + esc(src) + '" style="width:100%;height:100%;object-fit:cover">') +
             '</div>';
         }).join("")
       : '<div class="hist-empty" style="grid-column:1/-1;padding:14px">你还没有生成过图片/视频，先去工坊生成吧</div>';
@@ -2372,14 +2379,14 @@ async function togglePostMedia() {
 function pickPostMedia(i) {
   const p = myMediaList[i];
   if (!p) return;
-  selPostMedia = { kind: p.type, url: p.type === "image" ? (p.result.url || p.result.b64) : p.result.videoUrl };
+  selPostMedia = { kind: p.type, url: safeMediaUrl(p.type === "image" ? (p.result.url || p.result.b64) : p.result.videoUrl) };
   $("#postMediaPicker").classList.add("hidden");
   $("#postMediaPreview").classList.remove("hidden");
   $("#postMediaPreview").innerHTML =
     '<div class="sq-head" style="margin-bottom:6px"><span class="badge b-ok">已选' + (selPostMedia.kind === "video" ? "视频" : "图片") + '</span><button class="btn-icon" style="margin-left:auto" onclick="clearPostMedia()" title="移除">' + icon("del", 14) + '</button></div>' +
     (selPostMedia.kind === "video"
-      ? '<video src="' + selPostMedia.url + '" controls preload="metadata" style="max-width:100%;max-height:200px;border-radius:10px"></video>'
-      : '<img src="' + selPostMedia.url + '" style="max-width:100%;max-height:200px;border-radius:10px">');
+      ? '<video src="' + esc(selPostMedia.url) + '" controls preload="metadata" style="max-width:100%;max-height:200px;border-radius:10px"></video>'
+      : '<img src="' + esc(selPostMedia.url) + '" style="max-width:100%;max-height:200px;border-radius:10px">');
 }
 function clearPostMedia() {
   selPostMedia = null;

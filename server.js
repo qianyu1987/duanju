@@ -8,6 +8,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const dns = require("dns").promises;
 let sharp;
 try { sharp = require("sharp"); } catch (e) { sharp = null; }
 
@@ -169,6 +170,19 @@ function localDate(ts) {
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 function genId(prefix) { return prefix + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function sanitizeResult(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const out = {};
+  for (const key of ["text", "url", "videoUrl", "b64", "taskId", "channel"]) {
+    if (typeof value[key] !== "string") continue;
+    const max = key === "text" ? 100000 : key === "b64" ? 12e6 : 2048;
+    const v = value[key].slice(0, max);
+    if (["url", "videoUrl"].includes(key) && !/^https?:\/\/[^\s"'<>]+$/i.test(v)) continue;
+    if (key === "b64" && !/^data:image\/(?:png|jpe?g|webp);base64,[a-z0-9+/=]+$/i.test(v)) continue;
+    out[key] = v;
+  }
+  return out;
+}
 function sendJSON(res, status, obj) {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
   res.end(JSON.stringify(obj));
@@ -204,6 +218,39 @@ function localIp() {
   return "127.0.0.1";
 }
 
+// Remote URLs are user-controlled (image references and custom channels). Keep
+// the server from reaching loopback, link-local, or private network services.
+async function assertSafeRemoteUrl(raw) {
+  let u;
+  try { u = new URL(String(raw)); } catch (e) { throw new Error("URL 格式不正确"); }
+  if (!/^https?:$/.test(u.protocol) || u.username || u.password) throw new Error("仅支持无认证的 HTTP(S) URL");
+  const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".internal")) {
+    throw new Error("禁止访问内部主机");
+  }
+  const isPrivate = ip => {
+    const v = String(ip).toLowerCase();
+    if (v.startsWith("::ffff:")) return isPrivate(v.slice(7));
+    if (v === "::1" || v === "0:0:0:0:0:0:0:1" || v.startsWith("fc") || v.startsWith("fd") || v.startsWith("fe80:")) return true;
+    const m = v.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+    if (!m) return false;
+    const a = Number(m[1]), b = Number(m[2]);
+    return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+  };
+  if (isPrivate(host)) throw new Error("禁止访问内网地址");
+  try {
+    const records = await dns.lookup(host, { all: true, verbatim: true });
+    if (!records.length || records.some(r => isPrivate(r.address))) throw new Error("禁止访问内网地址");
+  } catch (e) {
+    if (e.message === "禁止访问内网地址") throw e;
+    throw new Error("无法解析远程主机");
+  }
+  return u.toString();
+}
+
+const UPSTREAM_TIMEOUT_MS = 60000;
+function upstreamSignal() { return AbortSignal.timeout(UPSTREAM_TIMEOUT_MS); }
+
 /* ---------------- 渠道代理（按渠道分发） ---------------- */
 async function forwardChat(ch, body) {
   const key = channelKey(ch);
@@ -211,7 +258,8 @@ async function forwardChat(ch, body) {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
     // agnes-2.5-flash 为推理模型：输出前会消耗一部分推理 token，max_tokens 建议设大（官方最佳实践）
-    body: JSON.stringify({ model: ch.model, messages: body.messages, max_tokens: Math.max(body.max_tokens || 0, 4000), stream: false })
+    body: JSON.stringify({ model: ch.model, messages: body.messages, max_tokens: Math.min(Math.max(body.max_tokens || 0, 4000), 16000), stream: false }),
+    signal: upstreamSignal()
   });
   if (!res.ok) throw new Error("上游 HTTP " + res.status + "：" + (await res.text()).slice(0, 400));
   const data = await res.json();
@@ -236,7 +284,7 @@ async function forwardImage(ch, body) {
   const res = await fetch(ch.baseUrl + "/images/generations", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload), signal: upstreamSignal()
   });
   if (!res.ok) throw new Error("上游 HTTP " + res.status + "：" + (await res.text()).slice(0, 400));
   const data = await res.json();
@@ -267,7 +315,7 @@ async function forwardVideoCreate(ch, body) {
   const res = await fetch(ch.baseUrl + "/videos", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload), signal: upstreamSignal()
   });
   if (!res.ok) throw new Error("上游 HTTP " + res.status + "：" + (await res.text()).slice(0, 400));
   const data = await res.json();
@@ -278,7 +326,7 @@ async function forwardVideoCreate(ch, body) {
 async function forwardVideoPoll(ch, taskId) {
   const key = channelKey(ch);
   const res = await fetch(ch.baseUrl + "/videos/" + encodeURIComponent(taskId), {
-    headers: { "Authorization": "Bearer " + key }
+    headers: { "Authorization": "Bearer " + key }, signal: upstreamSignal()
   });
   if (!res.ok) throw new Error("上游 HTTP " + res.status + "：" + (await res.text()).slice(0, 300));
   const data = await res.json();
@@ -289,6 +337,9 @@ async function forwardVideoPoll(ch, taskId) {
   return { status, videoUrl, raw: data };
 }
 async function forwardByChannel(ch, action, body, taskId) {
+  // Validate at use time too, so channels created before this check cannot be
+  // used as a server-side request forgery primitive.
+  await assertSafeRemoteUrl(ch.baseUrl);
   if (ch.adapter === "chat-compat") return forwardChat(ch, body);
   if (ch.adapter === "image-compat") return forwardImage(ch, body);
   if (ch.adapter === "video-agnes") {
@@ -308,7 +359,7 @@ function addPost(user, body) {
     type: body.type,
     prompt: String(body.prompt || "").trim().slice(0, 2000),
     params: body.params && typeof body.params === "object" ? body.params : {},
-    result: body.result && typeof body.result === "object" ? body.result : {},
+    result: sanitizeResult(body.result),
     status: body.status === "pending" ? "pending" : "done",
     createdAt: Date.now()
   };
@@ -468,6 +519,7 @@ async function handleAPI(req, res, method, p, url) {
     if (!name) return fail(res, 400, "渠道名称不能为空");
     if (!["text", "image", "video"].includes(kind)) return fail(res, 400, "type 必须为 text/image/video");
     if (!/^https?:\/\//.test(baseUrl)) return fail(res, 400, "Base URL 必须以 http(s):// 开头");
+    try { await assertSafeRemoteUrl(baseUrl); } catch (e) { return fail(res, 400, e.message); }
     if (!model) return fail(res, 400, "模型名不能为空");
     if (!apiKey) return fail(res, 400, "API Key 不能为空");
     const adapter = kind === "text" ? "chat-compat" : kind === "image" ? "image-compat" : "video-agnes";
@@ -486,7 +538,13 @@ async function handleAPI(req, res, method, p, url) {
     if (!u.isAdmin && ch.createdBy !== u.id) return fail(res, 403, "只能管理自己的渠道");
     const b = await readBody(req);
     if (b.name !== undefined) ch.name = String(b.name).trim().slice(0, 30) || ch.name;
-    if (b.baseUrl !== undefined) ch.baseUrl = String(b.baseUrl).trim().replace(/\/+$/, "") || ch.baseUrl;
+    if (b.baseUrl !== undefined) {
+      const nextBase = String(b.baseUrl).trim().replace(/\/+$/, "");
+      if (nextBase) {
+        try { await assertSafeRemoteUrl(nextBase); } catch (e) { return fail(res, 400, e.message); }
+        ch.baseUrl = nextBase;
+      }
+    }
     if (b.model !== undefined) ch.model = String(b.model).trim().slice(0, 80) || ch.model;
     if (b.apiKey !== undefined && String(b.apiKey).trim()) ch.apiKey = String(b.apiKey).trim().slice(0, 300);
     if (b.enabled !== undefined && (u.isAdmin || !ch.isPreset)) ch.enabled = !!b.enabled;
@@ -523,8 +581,8 @@ async function handleAPI(req, res, method, p, url) {
     if (!post) return fail(res, 404, "记录不存在");
     if (post.userId !== u.id && !u.isAdmin) return fail(res, 403, "只能修改自己的记录");
     const b = await readBody(req);
-    if (b.result && typeof b.result === "object") post.result = Object.assign(post.result, b.result);
-    if (b.status) post.status = b.status;
+    if (b.result && typeof b.result === "object") post.result = Object.assign(post.result, sanitizeResult(b.result));
+    if (b.status && ["pending", "done", "failed"].includes(b.status)) post.status = b.status;
     if (b.error) post.error = String(b.error).slice(0, 500);
     saveJSON("posts.json", posts);
     return ok(res, post);
@@ -737,6 +795,7 @@ async function handleAPI(req, res, method, p, url) {
     if (!name || !baseUrl || !model) return fail(res, 400, "名称/Base URL/模型名 不能为空");
     if (!["text", "image", "video"].includes(kind)) return fail(res, 400, "type 必须为 text/image/video");
     if (!/^https?:\/\//.test(baseUrl)) return fail(res, 400, "Base URL 必须以 http(s):// 开头");
+    try { await assertSafeRemoteUrl(baseUrl); } catch (e) { return fail(res, 400, e.message); }
     const ch = { id: genId("c"), name, kind, adapter, baseUrl, model, apiKey, note: String(b.note || "").slice(0, 100), isPreset: !!b.isPreset, enabled: b.enabled !== false, createdBy: "admin", sort: Number(b.sort) || 0 };
     const channels = loadChannels();
     channels.push(ch);
@@ -751,7 +810,11 @@ async function handleAPI(req, res, method, p, url) {
     if (!ch) return fail(res, 404, "渠道不存在");
     const b = await readBody(req);
     if (b.name !== undefined && String(b.name).trim()) ch.name = String(b.name).trim().slice(0, 30);
-    if (b.baseUrl !== undefined && String(b.baseUrl).trim()) ch.baseUrl = String(b.baseUrl).trim().replace(/\/+$/, "");
+    if (b.baseUrl !== undefined && String(b.baseUrl).trim()) {
+      const nextBase = String(b.baseUrl).trim().replace(/\/+$/, "");
+      try { await assertSafeRemoteUrl(nextBase); } catch (e) { return fail(res, 400, e.message); }
+      ch.baseUrl = nextBase;
+    }
     if (b.model !== undefined && String(b.model).trim()) ch.model = String(b.model).trim().slice(0, 80);
     if (b.apiKey !== undefined && String(b.apiKey).trim()) ch.apiKey = String(b.apiKey).trim().slice(0, 300);
     if (b.adapter !== undefined && String(b.adapter).trim()) ch.adapter = String(b.adapter).trim();
@@ -811,6 +874,7 @@ async function handleAPI(req, res, method, p, url) {
     const w = Math.min(parseInt(url.searchParams.get("w") || "400", 10), 1200) || 400;
     if (!imgUrl) return fail(res, 400, "url 参数缺失");
     try {
+      const safeUrl = await assertSafeRemoteUrl(imgUrl);
       // 生成缓存 key（URL + 宽度）
       const cacheKey = crypto.createHash('md5').update(imgUrl + '_' + w).digest('hex');
       const cacheDir = path.join(ROOT, 'data', 'cache', 'thumbs');
@@ -832,9 +896,13 @@ async function handleAPI(req, res, method, p, url) {
 
       if (!outBuf) {
         // 下载原图
-        const imgRes = await fetch(imgUrl);
+        const imgRes = await fetch(safeUrl, { redirect: "manual", signal: AbortSignal.timeout(15000) });
+        if (imgRes.status >= 300 && imgRes.status < 400) return fail(res, 400, "不支持重定向图片地址");
         if (!imgRes.ok) return fail(res, 400, "无法获取原图");
+        const contentLength = Number(imgRes.headers.get("content-length") || 0);
+        if (contentLength > 15 * 1024 * 1024) return fail(res, 413, "原图过大");
         const imgBuf = Buffer.from(await imgRes.arrayBuffer());
+        if (imgBuf.length > 15 * 1024 * 1024) return fail(res, 413, "原图过大");
 
         if (!sharp) return fail(res, 500, "sharp 未安装");
         metadata = await sharp(imgBuf).metadata();
@@ -863,6 +931,7 @@ async function handleAPI(req, res, method, p, url) {
       });
       return res.end(outBuf);
     } catch (e) {
+      if (/禁止访问|URL 格式|无法解析/.test(e.message || "")) return fail(res, 400, e.message);
       return fail(res, 500, "缩略图生成失败：" + (e.message || "unknown"));
     }
   }
@@ -896,6 +965,9 @@ ensureDataDir();
 ensureChannels();
 const server = http.createServer(async (req, res) => {
   try {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "same-origin");
     const url = new URL(req.url, "http://localhost");
     const p = url.pathname;
     const method = req.method;
