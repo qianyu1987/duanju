@@ -1419,32 +1419,35 @@ async function loadQuotaStats() {
     const quotaEl = $("#quotaStats");
     if (!quotaEl) return;
     quotaEl.style.display = "block";
-    
-    // 计算百分比
-    const todayUsed = stats.today || 0;
-    const todayTotal = 4000;
-    const pct = Math.min(100, Math.round(todayUsed / todayTotal * 100));
-    const remaining = todayTotal - todayUsed;
-    
-    // 根据使用率选择颜色
-    let color = 'var(--green)';
-    let bgColor = 'var(--green-soft)';
-    if (pct > 80) { color = 'var(--red)'; bgColor = 'var(--red-soft)'; }
-    else if (pct > 50) { color = 'var(--amber)'; bgColor = 'var(--amber-soft)'; }
-    
+
+    const limits = stats.limits || { text: 14400, image: 4000, video: 500 };
+    const usage = stats.usageToday || { text: 0, image: 0, video: 0 };
+
+    function quotaBar(label, icon, used, total, unit) {
+      const pct = Math.min(100, Math.round(used / total * 100));
+      const remaining = Math.max(0, total - used);
+      let color = 'var(--green)';
+      let bgColor = 'var(--green-soft)';
+      if (pct > 80) { color = 'var(--red)'; bgColor = 'var(--red-soft)'; }
+      else if (pct > 50) { color = 'var(--amber)'; bgColor = 'var(--amber-soft)'; }
+      return '<div style="margin-bottom:12px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+          '<span style="font-size:13px;font-weight:600;color:var(--text)">' + icon + ' ' + label + '</span>' +
+          '<span style="font-size:12px;color:var(--sub)"><b style="color:' + color + '">' + used + '</b> / ' + total + ' ' + unit + '</span>' +
+        '</div>' +
+        '<div style="background:rgba(255,255,255,0.6);border-radius:999px;height:10px;overflow:hidden">' +
+          '<div style="background:' + color + ';height:100%;width:' + pct + '%;border-radius:999px;transition:width 0.5s ease"></div>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--sub);margin-top:4px;text-align:right">剩余 ' + remaining + ' ' + unit + '</div>' +
+      '</div>';
+    }
+
     quotaEl.innerHTML =
       '<div style="background:linear-gradient(135deg,var(--primary-soft),var(--purple-soft));border-radius:16px;padding:var(--space-5);margin-bottom:var(--space-4)">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3)">' +
-          '<span style="font-size:14px;font-weight:600;color:var(--text)">🎨 今日图片生成额度</span>' +
-          '<span style="font-size:13px;color:var(--sub)"><b style="color:var(--primary);font-size:18px">' + todayUsed + '</b> / ' + todayTotal + ' 张</span>' +
-        '</div>' +
-        '<div style="background:rgba(255,255,255,0.6);border-radius:999px;height:12px;overflow:hidden">' +
-          '<div style="background:linear-gradient(90deg,var(--primary),var(--purple));height:100%;width:' + pct + '%;border-radius:999px;transition:width 0.5s ease"></div>' +
-        '</div>' +
-        '<div style="margin-top:var(--space-3);font-size:13px;color:var(--sub);display:flex;justify-content:space-between">' +
-          '<span>已使用 ' + pct + '%</span>' +
-          '<span style="color:' + color + ';font-weight:600">剩余 ' + remaining + ' 张</span>' +
-        '</div>' +
+        '<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:var(--space-3)">📊 今日额度使用情况</div>' +
+        quotaBar('文本生成', '💬', usage.text, limits.text, '次') +
+        quotaBar('图片生成', '🎨', usage.image, limits.image, '张') +
+        quotaBar('视频生成', '🎬', usage.video, limits.video, '秒') +
       '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3)">' +
         '<div style="text-align:center;padding:var(--space-4);background:#fff;border-radius:14px;border:1px solid var(--line)">' +
@@ -1527,27 +1530,33 @@ async function renderProfile() {
     $("#profVideos").textContent = videoCount;
     
     // 渲染额度进度条
-    const todayUsed = stats.today || 0;
-    const todayTotal = 4000;
-    const pct = Math.min(100, Math.round(todayUsed / todayTotal * 100));
-    const remaining = todayTotal - todayUsed;
-    let color = 'var(--green)';
-    if (pct > 80) color = 'var(--red)';
-    else if (pct > 50) color = 'var(--amber)';
-    
+    const limits = stats.limits || { text: 14400, image: 4000, video: 500 };
+    const usage = stats.usageToday || { text: 0, image: 0, video: 0 };
+
+    function quotaBar(label, icon, used, total, unit) {
+      const pct = Math.min(100, Math.round(used / total * 100));
+      const remaining = Math.max(0, total - used);
+      let color = 'var(--green)';
+      if (pct > 80) color = 'var(--red)';
+      else if (pct > 50) color = 'var(--amber)';
+      return '<div style="margin-bottom:10px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+          '<span style="font-size:12px;font-weight:600;color:var(--text)">' + icon + ' ' + label + '</span>' +
+          '<span style="font-size:11px;color:var(--sub)"><b style="color:' + color + '">' + used + '</b>/' + total + unit + '</span>' +
+        '</div>' +
+        '<div style="background:rgba(255,255,255,0.6);border-radius:999px;height:8px;overflow:hidden">' +
+          '<div style="background:' + color + ';height:100%;width:' + pct + '%;border-radius:999px;transition:width 0.5s ease"></div>' +
+        '</div>' +
+        '<div style="font-size:10px;color:var(--sub);margin-top:2px;text-align:right">剩余 ' + remaining + ' ' + unit + '</div>' +
+      '</div>';
+    }
+
     $("#profileQuotaBar").innerHTML =
-      '<div style="background:linear-gradient(135deg,var(--primary-soft),var(--purple-soft));border-radius:16px;padding:var(--space-5)">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3)">' +
-          '<span style="font-size:14px;font-weight:600;color:var(--text)">🎨 今日图片生成额度</span>' +
-          '<span style="font-size:13px;color:var(--sub)"><b style="color:var(--primary);font-size:18px">' + todayUsed + '</b> / ' + todayTotal + ' 张</span>' +
-        '</div>' +
-        '<div style="background:rgba(255,255,255,0.6);border-radius:999px;height:12px;overflow:hidden">' +
-          '<div style="background:linear-gradient(90deg,var(--primary),var(--purple));height:100%;width:' + pct + '%;border-radius:999px;transition:width 0.5s ease"></div>' +
-        '</div>' +
-        '<div style="margin-top:var(--space-3);font-size:13px;color:var(--sub);display:flex;justify-content:space-between">' +
-          '<span>已使用 ' + pct + '%</span>' +
-          '<span style="color:' + color + ';font-weight:600">剩余 ' + remaining + ' 张</span>' +
-        '</div>' +
+      '<div style="background:linear-gradient(135deg,var(--primary-soft),var(--purple-soft));border-radius:12px;padding:14px">' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">📊 今日额度</div>' +
+        quotaBar('文本', '💬', usage.text, limits.text, '次') +
+        quotaBar('图片', '🎨', usage.image, limits.image, '张') +
+        quotaBar('视频', '🎬', usage.video, limits.video, '秒') +
       '</div>';
     
     // 检查过期内容

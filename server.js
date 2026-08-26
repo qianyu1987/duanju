@@ -249,6 +249,15 @@ async function assertSafeRemoteUrl(raw) {
 }
 
 const UPSTREAM_TIMEOUT_MS = 60000;
+const CHANNELS = { text: 14400, image: 4000, video: 500 }; // Agnes 官方每日配额（免费）
+function recordUsage(type, durationSec) {
+  const d = localDate();
+  const data = loadJSON("usage.json", {});
+  if (!data[d]) data[d] = { text: 0, image: 0, video: 0 };
+  if (type === "video") { data[d].video = Math.round((data[d].video || 0) + durationSec); }
+  else { data[d][type] = (data[d][type] || 0) + 1; }
+  saveJSON("usage.json", data);
+}
 function upstreamSignal() { return AbortSignal.timeout(UPSTREAM_TIMEOUT_MS); }
 
 /* ---------------- 渠道代理（按渠道分发） ---------------- */
@@ -465,6 +474,7 @@ async function handleAPI(req, res, method, p, url) {
       if (!ch) return fail(res, 500, "没有可用的文本渠道，请管理员在后台启用，或添加自定义渠道");
       if (!channelKey(ch)) return fail(res, 500, "文本渠道「" + ch.name + "」未配置 API Key");
       const text = await forwardByChannel(ch, "chat", b);
+      recordUsage("text");
       return ok(res, { text, channel: ch.name });
     }
     if (p === "/api/proxy/image" && method === "POST") {
@@ -474,6 +484,7 @@ async function handleAPI(req, res, method, p, url) {
       if (!ch) return fail(res, 500, "没有可用的图片渠道，请管理员在后台启用，或添加自定义渠道");
       if (!channelKey(ch)) return fail(res, 500, "图片渠道「" + ch.name + "」未配置 API Key");
       const r = await forwardByChannel(ch, "image", b);
+      recordUsage("image");
       return ok(res, Object.assign(r, { channel: ch.name }));
     }
     if (p === "/api/proxy/video" && method === "POST") {
@@ -483,6 +494,7 @@ async function handleAPI(req, res, method, p, url) {
       if (!ch) return fail(res, 500, "没有可用的视频渠道，请管理员在后台启用，或添加自定义渠道");
       if (!channelKey(ch)) return fail(res, 500, "视频渠道「" + ch.name + "」未配置 API Key");
       const taskId = await forwardByChannel(ch, "create", b);
+      recordUsage("video", Number(b.len) || 6);
       return ok(res, { taskId, channel: ch.name });
     }
     if (p.startsWith("/api/proxy/video/") && method === "GET") {
@@ -660,7 +672,12 @@ async function handleAPI(req, res, method, p, url) {
       yesterday: yesterdayCount,
       week: weekCount,
       total: posts.length,
-      byType: { image: imageCount, video: videoCount, text: textCount, drama: dramaCount }
+      byType: { image: imageCount, video: videoCount, text: textCount, drama: dramaCount },
+      limits: CHANNELS,
+      usageToday: (() => {
+        const u = loadJSON("usage.json", {})[today] || {};
+        return { text: u.text || 0, image: u.image || 0, video: u.video || 0 };
+      })()
     });
   }
 
