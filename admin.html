@@ -136,6 +136,7 @@ tr:last-child td{border-bottom:none}
     <button class="nav-tab" data-v="posts">内容管理</button>
     <button class="nav-tab" data-v="messages">留言管理</button>
     <button class="nav-tab" data-v="channels">渠道管理</button>
+    <button class="nav-tab" data-v="batch">批量生成</button>
   </div>
 
   <div id="view-stats">
@@ -225,6 +226,42 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
   </div>
+
+  <div id="view-batch" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--purple)"></span>批量图片生成</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div>
+          <label>主题类型</label>
+          <select id="batchTheme" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);font-size:15px">
+            <option value="daily">日常美女（瑜伽/比基尼/职业装等）</option>
+            <option value="tiangong">天宫神话系列</option>
+          </select>
+        </div>
+        <div>
+          <label>生成数量</label>
+          <input id="batchCount" type="number" min="1" max="100" value="10" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);font-size:15px">
+        </div>
+        <div>
+          <label>图片尺寸</label>
+          <select id="batchSize" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);font-size:15px">
+            <option value="1K">1K（快速）</option>
+            <option value="2K" selected>2K（推荐）</option>
+            <option value="4K">4K（高清）</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary block" id="batchGenBtn" onclick="startBatchGenerate()">开始批量生成</button>
+      <div id="batchProgress" style="margin-top:16px;display:none">
+        <div style="font-size:14px;color:var(--sub);margin-bottom:8px">生成进度：<span id="batchProgressText">0/0</span></div>
+        <div style="background:var(--line);border-radius:8px;height:8px;overflow:hidden">
+          <div id="batchProgressBar" style="background:linear-gradient(90deg,var(--primary),var(--primary2));height:100%;width:0%;transition:width 0.3s"></div>
+        </div>
+      </div>
+      <div id="batchResults" style="margin-top:16px"></div>
+    </div>
+  </div>
+
 </div>
 
 <div class="modal-mask" id="modalMask">
@@ -311,12 +348,13 @@ $$(".nav-tabs").forEach(group=>{
 });
 function switchView(v){
   view=v;
-  ["stats","users","posts","messages","channels"].forEach(x=>$("#view-"+x).classList.toggle("hidden",x!==v));
+  ["stats","users","posts","messages","channels","batch"].forEach(x=>$("#view-"+x).classList.toggle("hidden",x!==v));
   if(v==="stats") loadStats();
   if(v==="users") loadUsers();
   if(v==="posts") loadPosts();
   if(v==="messages") loadMessages();
   if(v==="channels") loadChannelsAdmin();
+  if(v==="batch") {}
 }
 
 /* 渠道管理 */
@@ -404,6 +442,54 @@ function resetPresets(){
     try{ await req("/admin/channels/reset-presets",{method:"POST"}); toast("已重置预设渠道"); loadChannelsAdmin(); }
     catch(e){ toast(e.message); }
   });
+}
+
+/* 批量图片生成 */
+async function startBatchGenerate() {
+  const theme = document.querySelector("#batchTheme").value;
+  const count = parseInt(document.querySelector("#batchCount").value) || 10;
+  const size = document.querySelector("#batchSize").value;
+  const btn = document.querySelector("#batchGenBtn");
+  const progress = document.querySelector("#batchProgress");
+  const results = document.querySelector("#batchResults");
+
+  btn.disabled = true;
+  btn.textContent = "生成中...";
+  progress.style.display = "block";
+  results.innerHTML = "";
+
+  try {
+    const data = await req("/admin/batch-generate", {
+      method: "POST",
+      body: JSON.stringify({ theme, count, size })
+    });
+
+    document.querySelector("#batchProgressText").textContent = data.success + "/" + data.total;
+    document.querySelector("#batchProgressBar").style.width = "100%";
+
+    let html = '<div style="margin-top:16px">';
+    html += '<div style="font-size:14px;color:var(--sub);margin-bottom:8px">生成结果：</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">';
+    data.results.forEach(r => {
+      if (r.success && r.url) {
+        html += '<div style="background:#fff;border-radius:10px;overflow:hidden;border:1px solid var(--line)">';
+        html += '<img src="' + r.url + '" style="width:100%;height:180px;object-fit:cover">';
+        html += '<div style="padding:8px;font-size:12px;color:var(--sub)">#' + r.index + '</div>';
+        html += '</div>';
+      } else {
+        html += '<div style="background:var(--red-soft);border-radius:10px;padding:12px;font-size:12px;color:var(--red)">#' + r.index + ': ' + (r.error || "失败") + '</div>';
+      }
+    });
+    html += '</div></div>';
+    results.innerHTML = html;
+    toast("批量生成完成：成功 " + data.success + " / " + data.total);
+  } catch(e) {
+    toast("生成失败：" + e.message);
+    results.innerHTML = '<div style="color:var(--red);padding:12px">' + esc(e.message) + '</div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "开始批量生成";
+  }
 }
 
 /* 统计看板 */

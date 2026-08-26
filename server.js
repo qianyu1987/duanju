@@ -897,6 +897,85 @@ async function handleAPI(req, res, method, p, url) {
     return res.end(JSON.stringify(data, null, 2));
   }
 
+  /* ---- 管理：批量图片生成 ---- */
+  if (p === "/api/admin/batch-generate" && method === "POST") {
+    const u = requireAdmin(req, res); if (!u) return;
+    const b = await readBody(req);
+    const { theme, count, size } = b;
+    
+    if (!theme || !count) return fail(res, 400, "主题和数量必填");
+    if (count < 1 || count > 100) return fail(res, 400, "数量应为1-100");
+    
+    const ch = pickChannel("image", u);
+    if (!ch) return fail(res, 500, "没有可用的图片渠道");
+    if (!channelKey(ch)) return fail(res, 500, "图片渠道未配置 API Key");
+    
+    const results = [];
+    const prompts = generateBatchPrompts(theme, count);
+    
+    for (let i = 0; i < prompts.length; i++) {
+      try {
+        const r = await forwardByChannel(ch, "image", {
+          prompt: prompts[i],
+          size: size || "2K",
+          n: 1
+        });
+        results.push({ index: i + 1, success: true, url: r?.data?.[0]?.url || null });
+        recordUsage("image");
+        await sleep(1500);
+      } catch (e) {
+        results.push({ index: i + 1, success: false, error: e.message });
+        await sleep(3000);
+      }
+    }
+    
+    return ok(res, { total: count, success: results.filter(x => x.success).length, results });
+  }
+
+  function generateBatchPrompts(theme, count) {
+    const themes = {
+      daily: [
+        "Beautiful Asian woman in yoga outfit, practicing yoga pose, serene studio, soft lighting, professional photography, high quality",
+        "Graceful female yoga instructor doing downward dog pose, flexible body, athletic wear, gym background, fitness lifestyle, 4K",
+        "Beautiful Asian woman in stylish bikini on tropical beach, turquoise ocean background, sunny day, vacation vibes, fashion photography",
+        "Glamorous woman in elegant black bikini posing by infinity pool, resort background, sunset lighting, professional shoot",
+        "Professional businesswoman in sleek black suit, confident pose in modern office, corporate fashion, sharp lighting",
+        "Elegant female executive in white blouse and pencil skirt, boardroom setting, leadership presence, polished look",
+        "Beautiful cosplayer as magical girl anime character, colorful outfit with ribbons, fantasy accessories, vibrant backdrop",
+        "Elegant cosplayer in fairy costume with wings, enchanted forest setting, ethereal lighting, detailed costume, fantasy art",
+        "Beautiful Chinese woman in elaborate Hanfu traditional dress, cherry blossom garden, classical elegance, flowing silk",
+        "Elegant lady in Tang Dynasty style robes with intricate embroidery, palace setting, traditional makeup, cultural heritage",
+        "Casual stylish woman in denim jacket and white t-shirt, urban street setting, natural sunlight, candid photography",
+        "Charming woman in summer dress at flower garden, bohemian style, golden hour, free spirit vibes",
+        "Fitness woman in athletic wear doing workout, gym background, healthy lifestyle, motivated expression, high energy",
+        "Active woman in sports bra and leggings running on track, athletic physique, determination, outdoor setting",
+        "Glamorous woman in elegant red evening gown, red carpet event, formal occasion, sophisticated beauty, luxury lifestyle",
+        "Beautiful lady in black cocktail dress at upscale restaurant, candlelight, romantic atmosphere, high fashion"
+      ],
+      tiangong: [
+        "Super wide angle view of Chinese Tiangong space station with beautiful fairy goddesses in flowing silk robes floating around, magical ethereal lighting, celestial beings with golden halos, ancient Chinese mythology meets futuristic space, ultra detailed, cinematic, 8K",
+        "Majestic Tiangong space station surrounded by dozens of immortal fairies in traditional Hanfu, crystal palace in space, starry galaxy background, divine light rays, fantasy art masterpiece, ultra wide angle perspective",
+        "Chinese fairy queens hovering around Tiangong station, ethereal beauty with flowing white and gold garments, mystical energy aura, cosmic backdrop with nebula colors, cinematic composition, ultra HD",
+        "Powerful Chinese gods and deities guarding Tiangong space station, majestic warriors in ornate armor with flying weapons, supernatural energy fields, epic composition, wide angle shot, mythical fantasy",
+        "Jade Emperor and celestial generals surrounding the Chinese space station, divine aura, golden phoenix birds flying around, majestic clouds, traditional Chinese mythology reimagined in space",
+        "Beautiful Moon Goddess Chang-e standing on Tiangong space station platform, gazing at Earth, ethereal glow, flowing silk robes, jade rabbit companion, magical aura, celestial palace in background",
+        "Majestic Chinese Dragon King circling Tiangong space station, serpentine dragon body wrapped around station modules, rainbow scales gleaming, divine power aura, mythological fantasy",
+        "Sun Wukong (Monkey King) performing acrobatic poses around Tiangong space station, golden cudgel weapon, cloud somersault, fiery eyes, heroic stance, mythological fantasy, ultra wide angle",
+        "Nezha (Child God) riding Wind Fire Wheels around Tiangong station, three heads six arms displaying powers, cosmic ocean below, heroic warrior in space, dynamic wide angle",
+        "Divine lovers NiuLang and Zhinv reuniting on Tiangong space station bridge, magpie bridge made of stars, romantic cosmic setting, Chinese valentines mythology, ethereal beauty",
+        "Guanyin (Goddess of Mercy) with compassionate aura floating around Tiangong station, surrounded by lotus petals and divine light, traditional Chinese deity",
+        "Taishang Laojun (Grand Pure One) in celestial robes, alchemical furnace floating nearby, Daoist immortal energy, ancient Chinese wisdom deity, cosmic backdrop"
+      ]
+    };
+    
+    const pool = themes[theme] || themes.daily;
+    return Array.from({ length: count }, (_, i) => pool[i % pool.length]);
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   // 图片缩略图：?url=xxx&w=400（带本地缓存）
   if (p === "/api/image/thumb" && method === "GET") {
     const imgUrl = url.searchParams.get("url");
