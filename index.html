@@ -1502,7 +1502,7 @@ async function renderProfile() {
   // 更新头像和基本信息
   const avatar = ME.username.slice(0, 1).toUpperCase();
   $("#profileAvatar").textContent = avatar;
-  $("#profileName").textContent = ME.username + (ME.isAdmin ? ' <span class="badge b-ok" style="font-size:11px">管理员</span>' : '');
+  $("#profileName").innerHTML = ME.username + (ME.isAdmin ? ' <span class="badge b-ok" style="font-size:11px">管理员</span>' : '');
   $("#profileJoined").textContent = '加入时间：' + new Date(ME.createdAt || Date.now()).toLocaleDateString('zh-CN');
   
   // 加载统计数据
