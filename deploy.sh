@@ -9,7 +9,7 @@ cd "$(dirname "$0")"
 
 VERSION="${1:?用法: ./deploy.sh <版本号> <更新说明>}"
 NOTE="${2:-更新}"
-SERVER="root@43.138.165.190"
+SERVER="root@lostmusic.top"
 APP="/root/duanju-app"
 
 echo "== [1/4] 生成版本写入脚本 =="
