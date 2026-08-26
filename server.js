@@ -624,23 +624,35 @@ async function handleAPI(req, res, method, p, url) {
   if (p === "/api/quota" && method === "GET") {
     const posts = loadJSON("posts.json", []);
     const now = new Date();
-    const today = now.toISOString().slice(0, 10);
-    const yesterday = new Date(now - 86400000).toISOString().slice(0, 10);
-    const last7days = new Date(now - 604800000).toISOString().slice(0, 10);
+    // 使用本地时间（CST）而非UTC
+    const today = now.getFullYear() + '-' +
+      String(now.getMonth() + 1).padStart(2, '0') + '-' +
+      String(now.getDate()).padStart(2, '0');
+    const yesterday = new Date(now - 86400000);
+    const yesterdayStr = yesterday.getFullYear() + '-' +
+      String(yesterday.getMonth() + 1).padStart(2, '0') + '-' +
+      String(yesterday.getDate()).padStart(2, '0');
+    const last7days = new Date(now - 604800000);
+    const last7daysStr = last7days.getFullYear() + '-' +
+      String(last7days.getMonth() + 1).padStart(2, '0') + '-' +
+      String(last7days.getDate()).padStart(2, '0');
 
     let todayCount = 0, yesterdayCount = 0, weekCount = 0;
     let imageCount = 0, videoCount = 0, textCount = 0, dramaCount = 0;
 
-    for (const p of posts) {
-      const dt = new Date(p.createdAt).toISOString().slice(0, 10);
-      const type = p.type || 'text';
+    for (const post of posts) {
+      const dt = new Date(post.createdAt);
+      const dtStr = dt.getFullYear() + '-' +
+        String(dt.getMonth() + 1).padStart(2, '0') + '-' +
+        String(dt.getDate()).padStart(2, '0');
+      const type = post.type || 'text';
       if (type === 'image') imageCount++;
       else if (type === 'video') videoCount++;
       else if (type === 'text') textCount++;
       else if (type === 'drama') dramaCount++;
-      if (dt === today) todayCount++;
-      if (dt === yesterday) yesterdayCount++;
-      if (dt >= last7days) weekCount++;
+      if (dtStr === today) todayCount++;
+      if (dtStr === yesterdayStr) yesterdayCount++;
+      if (dtStr >= last7daysStr) weekCount++;
     }
 
     return ok(res, {
