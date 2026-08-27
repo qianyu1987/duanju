@@ -810,7 +810,8 @@ async function handleAPI(req, res, method, p, url) {
   /* ---- 管理：渠道 & 设置 ---- */
   if (p === "/api/admin/channels" && method === "GET") {
     const u = requireAdmin(req, res); if (!u) return;
-    return ok(res, loadChannels());
+    const channels = loadChannels();
+    return ok(res, channels.map(c => sanitizeChannel(c)));
   }
   if (p === "/api/admin/channels" && method === "POST") {
     const u = requireAdmin(req, res); if (!u) return;
