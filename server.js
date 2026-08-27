@@ -1051,8 +1051,9 @@ async function handleAPI(req, res, method, p, url) {
 /* ---------------- 静态文件 ---------------- */
 function serveStatic(res, p, method) {
   let rel = p === "/" ? "/index.html" : p;
-  const deny = ["/data/", "/server.js", "/package.json", "/plan", "/.git"];
-  if (deny.some(d => rel.startsWith(d))) return fail(res, 403, "禁止访问");
+  // 允许访问缓存图片，但拒绝其他敏感数据路径
+  if (rel.startsWith("/data/") && !rel.startsWith("/data/cache/")) return fail(res, 403, "禁止访问");
+  if (["/server.js", "/package.json", "/plan", "/.git"].some(d => rel === d || rel.startsWith(d))) return fail(res, 403, "禁止访问");
   const full = path.join(ROOT, rel);
   if (!full.startsWith(ROOT)) return fail(res, 403, "禁止访问");
   fs.stat(full, (err, st) => {
