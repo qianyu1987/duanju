@@ -29,6 +29,9 @@ env -u NODE_OPTIONS node server.js   # PORT 3000；NODE_OPTIONS 的 --use-system
 - git status 里的 .workbuddy/、index.html.bak 删除记录是迁移时排除所致，属预期
 
 ## 版本记录
+### v1.0.45
+- 修复 API Key 丢失导致渠道显示"未填"问题（从 gen 脚本恢复 cpk-jE3Qzzq...）
+
 ### v1.0.43
 - 修复 admin 渠道列表 hasKey 字段缺失导致显示"未填"的问题
 
