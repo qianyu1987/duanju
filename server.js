@@ -89,19 +89,37 @@ const CHANNEL_SEED = [
 ];
 function ensureChannels() {
   const f = path.join(DATA_DIR, "channels.json");
-  if (fs.existsSync(f)) return;
+  let channels;
+  try { channels = JSON.parse(fs.readFileSync(f, "utf8")); } catch (e) { channels = null; }
+  if (!channels || !Array.isArray(channels) || channels.length === 0) {
+    // 文件不存在或格式错误，重新生成
+    const cfg = getConfig();
+    channels = CHANNEL_SEED.map(c => Object.assign({}, c, {
+      apiKey: "", isPreset: true, enabled: c.id === "c_agnes_text" || c.id === "c_agnes_image" || c.id === "c_agnes_video",
+      createdBy: "system", sort: 0
+    }));
+    channels.forEach(c => {
+      if (c.id === "c_agnes_text" && cfg.agnesApiKey) c.apiKey = cfg.agnesApiKey;
+      if (c.id === "c_agnes_image" && cfg.agnesApiKey) c.apiKey = cfg.agnesApiKey;
+      if (c.id === "c_agnes_video" && cfg.agnesApiKey) c.apiKey = cfg.agnesApiKey;
+    });
+    saveJSON("channels.json", channels);
+    console.log("[ensureChannels] 已初始化 channels.json");
+    return;
+  }
+  // 检查并修复 Agnes 渠道的 Key（防止被意外清空）
   const cfg = getConfig();
-  const channels = CHANNEL_SEED.map(c => Object.assign({}, c, {
-    apiKey: "", isPreset: true, enabled: c.id === "c_agnes_text" || c.id === "c_agnes_image" || c.id === "c_agnes_video",
-    createdBy: "system", sort: 0
-  }));
-  // Agnes 渠道的 Key 从既有 config 继承（兼容旧配置）
+  let changed = false;
   channels.forEach(c => {
-    if (c.id === "c_agnes_text" && cfg.agnesApiKey) c.apiKey = cfg.agnesApiKey;
-    if (c.id === "c_agnes_image" && cfg.agnesApiKey) c.apiKey = cfg.agnesApiKey;
-    if (c.id === "c_agnes_video" && cfg.agnesApiKey) c.apiKey = cfg.agnesApiKey;
+    if (c.id === "c_agnes_text" && !c.apiKey && cfg.agnesApiKey) { c.apiKey = cfg.agnesApiKey; changed = true; }
+    if (c.id === "c_agnes_image" && !c.apiKey && cfg.agnesApiKey) { c.apiKey = cfg.agnesApiKey; changed = true; }
+    if (c.id === "c_agnes_video" && !c.apiKey && cfg.agnesApiKey) { c.apiKey = cfg.agnesApiKey; changed = true; }
   });
-  saveJSON("channels.json", channels);
+  if (changed) {
+    saveJSON("channels.json", channels);
+    console.log("[ensureChannels] 已恢复 Agnes API Key");
+  }
+}
 }
 function loadChannels() { return loadJSON("channels.json", []); }
 function channelKey(ch) {
