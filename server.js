@@ -120,7 +120,6 @@ function ensureChannels() {
     console.log("[ensureChannels] 已恢复 Agnes API Key");
   }
 }
-}
 function loadChannels() { return loadJSON("channels.json", []); }
 function channelKey(ch) {
   // 预设 Agnes 渠道 Key 为空时从 config 兜底（兼容旧的 agnesApiKey 配置）
