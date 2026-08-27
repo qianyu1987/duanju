@@ -22,10 +22,10 @@ env -u NODE_OPTIONS node server.js   # PORT 3000；NODE_OPTIONS 的 --use-system
 ```
 
 ## 已知问题
-- Agnes AI API Key（cpk-jE3Qzzq...）已失效，需在 https://platform.agnes-ai.com/settings/apiKeys 换新，更新服务器上 /root/duanju-app/{tiangong_gen,daily_gen}.js 第6行
-- 服务器 cron：06:00 daily_gen.js（日常美女图）、07:00 tiangong_gen.js（天宫神话图）
+- Agnes AI API Key（cpk-jE3Qzzq...）可用，但免费额度有限制（4K tier 1 request/min）
+- 每日 cron 任务（06:00 daily_gen, 07:00 tiangong_gen）会受速率限制影响
+- 已知 bug: ERR_HTTP_HEADERS_SENT 偶发错误（pre-existing，不影响功能）
 - git status 里的 .workbuddy/、index.html.bak 删除记录是迁移时排除所致，属预期
-- MEMORY.md 中部署规范有重复条目，待清理
 
 ## v1.0.42 优化记录
 - 服务端：静态文件 ETag + 304 缓存；HEAD 请求支持
