@@ -1048,14 +1048,14 @@ async function handleAPI(req, res, method, p, url) {
 }
 
 /* ---------------- 静态文件 ---------------- */
-function serveStatic(res, p) {
+function serveStatic(res, p, method) {
   let rel = p === "/" ? "/index.html" : p;
   const deny = ["/data/", "/server.js", "/package.json", "/plan", "/.git"];
   if (deny.some(d => rel.startsWith(d))) return fail(res, 403, "禁止访问");
   const full = path.join(ROOT, rel);
   if (!full.startsWith(ROOT)) return fail(res, 403, "禁止访问");
-  fs.readFile(full, (err, buf) => {
-    if (err) return fail(res, 404, "页面不存在");
+  fs.stat(full, (err, st) => {
+    if (err || !st.isFile()) return fail(res, 404, "页面不存在");
     const ext = path.extname(full).toLowerCase();
     const mime = {
       ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
@@ -1063,8 +1063,21 @@ function serveStatic(res, p) {
       ".jpeg": "image/jpeg", ".svg": "image/svg+xml", ".json": "application/json; charset=utf-8",
       ".ico": "image/x-icon", ".webp": "image/webp", ".mp4": "video/mp4"
     };
-    res.writeHead(200, { "Content-Type": mime[ext] || "application/octet-stream" });
-    res.end(buf);
+    // ETag 基于 mtime+size：文件未变时浏览器走 304 缓存，不再重复下载
+    const etag = '"' + st.size.toString(16) + '-' + st.mtimeMs.toString(16) + '"';
+    const headers = {
+      "Content-Type": mime[ext] || "application/octet-stream",
+      "ETag": etag,
+      "Cache-Control": "no-cache"
+    };
+    if (res.req && res.req.headers["if-none-match"] === etag) {
+      res.writeHead(304, headers);
+      return res.end();
+    }
+    headers["Content-Length"] = st.size;
+    res.writeHead(200, headers);
+    if (method === "HEAD") return res.end(); // HEAD 只回头不带 body
+    fs.createReadStream(full).pipe(res);
   });
 }
 
@@ -1079,9 +1092,9 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://localhost");
     const p = url.pathname;
     const method = req.method;
-    if (method === "GET" && (p === "/" || p === "/index.html" || p === "/admin.html")) return serveStatic(res, p);
-    if (p.startsWith("/api/")) return await handleAPI(req, res, method, p, url);
-    if (method === "GET" && !p.includes("..")) return serveStatic(res, p);
+    if ((method === "GET" || method === "HEAD") && (p === "/" || p === "/index.html" || p === "/admin.html")) return serveStatic(res, p, method);
+    if (p.startsWith("/api/") && method !== "HEAD") return await handleAPI(req, res, method, p, url);
+    if ((method === "GET" || method === "HEAD") && !p.includes("..")) return serveStatic(res, p, method);
     return fail(res, 404, "not found");
   } catch (e) {
     fail(res, 500, "服务器错误：" + (e && e.message ? e.message : "unknown"));

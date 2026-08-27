@@ -6,8 +6,11 @@
   <meta name="theme-color" content="oklch(58% 0.18 275)">
   <meta name="color-scheme" content="light only">
   <title>AI 创作台 · 文本/图片/视频/短剧</title>
+  <!-- Google Fonts: preconnect + link 替换串行 @import，降低首屏阻塞 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 :root{
   /* OKLCH perceptually uniform colors */
   --bg:#f8f9fc; --card:#ffffff; --line:#e8eaf0; --text:#0f172a; --sub:#475569; --muted:#94a3b8;
@@ -2218,7 +2221,14 @@ function pollVideoById(id, silent) {
     }
   };
   tryOnce();
-  pollTimers[id] = setInterval(tryOnce, 8000);
+  // 动态退避轮询：首次 4s，随后每次 +4s，上限 16s；减轻服务端压力，同时保证生成完成尽快刷新
+  let attempt = 0;
+  const scheduleNext = () => {
+    attempt++;
+    pollTimers[id] = setTimeout(scheduleNext, Math.min(4000 * attempt, 16000));
+    tryOnce();
+  };
+  scheduleNext();
 }
 function downloadVideo(id) {
   const h = HIST.find(x => x.id === id);
