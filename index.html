@@ -770,6 +770,17 @@ button:disabled{cursor:not-allowed;opacity:0.6}
 .storyboard-progress{margin-top:12px;height:4px;background:var(--bg);border-radius:2px;overflow:hidden}
 .storyboard-progress-bar{height:100%;background:linear-gradient(90deg,var(--purple),var(--primary));border-radius:2px;transition:width .3s}
 
+/* v1.5 配音与字幕 */
+.storyboard-dialogue{font-size:12px;color:var(--pink);margin-top:8px;padding:6px 10px;background:rgba(236,72,153,.05);border-radius:6px;border-left:3px solid var(--pink)}
+.storyboard-subtitle{font-size:11px;color:var(--primary);margin-top:6px;padding:4px 8px;background:rgba(59,130,246,.1);border-radius:4px;display:inline-block}
+.storyboard-audio-btn{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:4px 10px;border-radius:6px;background:rgba(236,72,153,.1);color:var(--pink);border:none;cursor:pointer;transition:all .2s}
+.storyboard-audio-btn:hover{background:rgba(236,72,153,.2)}
+.storyboard-audio-btn.playing{background:rgba(236,72,153,.3);animation:pulse 1s infinite}
+.storyboard-subtitle-input{width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;font-size:12px;margin-top:8px;resize:vertical;min-height:40px;font-family:inherit}
+.storyboard-subtitle-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(59,130,246,.1)}
+.storyboard-dialogue-input{width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;font-size:12px;margin-top:8px;resize:vertical;min-height:40px;font-family:inherit}
+.storyboard-dialogue-input:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 2px rgba(236,72,153,.1)}
+
 /* 模板保存 */
 .template-save{
   margin-top:12px;padding:12px;background:var(--bg);border-radius:8px;
@@ -1149,6 +1160,8 @@ details[open] summary{margin-bottom:8px}
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button class="btn btn-ghost btn-sm" onclick="autoGenerateStoryboard()" id="storyboardGenBtn">🎬 AI生成分镜</button>
                 <button class="btn btn-primary btn-sm" onclick="generateAllVideos()" id="genAllVidBtn">🚀 批量生成视频</button>
+                <button class="btn btn-ghost btn-sm" onclick="generateAllAudio()" id="genAllAudioBtn" ${!currentStoryboard || currentStoryboard.length === 0 ? 'disabled' : ''}>🔊 批量配音</button>
+                <button class="btn btn-ghost btn-sm" onclick="generateAllSubtitles()" id="genAllSubBtn" ${!currentStoryboard || currentStoryboard.length === 0 ? 'disabled' : ''}>💬 批量字幕</button>
                 <button class="btn btn-ghost btn-sm" onclick="exportStoryboard()" ${!currentStoryboard || currentStoryboard.length === 0 ? 'disabled' : ''}>📤 导出分镜</button>
               </div>
             </div>
@@ -2678,19 +2691,16 @@ function renderStoryboard(items) {
         </div>
       </div>
       <div class="storyboard-content">${esc(item.description)}</div>
-      ${item.image ?
-        `<img src="${esc(safeMediaUrl(item.image))}" class="storyboard-img" alt="分镜图${item.num}">` :
-        `<div class="storyboard-img-placeholder">🎬 点击生成图片</div>`
-      }
-      ${item.videoUrl ?
-        `<div class="storyboard-video-url"><video src="${esc(item.videoUrl)}" controls playsinline></video></div>` :
-        item.videoStatus === 'pending' ?
-        `<div class="storyboard-video-loading" style="text-align:center;padding:10px"><span class="spinner"></span>视频生成中...</div>` :
+      ${item.dialogue ? `<div class="storyboard-dialogue">💬 ${esc(item.dialogue)}</div>` : ''}
+      ${item.subtitle ? `<div class="storyboard-subtitle">📝 ${esc(item.subtitle)}</div>` : ''}
+      ${item.audioUrl ?
+        `<div class="storyboard-video-url"><audio src="${esc(item.audioUrl)}" controls style="width:100%;max-width:320px"></audio></div>` :
         ''
       }
       <div class="storyboard-actions">
         <button class="btn btn-primary btn-sm" onclick="generateStoryboardImage(${index})">🎨 生成图片</button>
         <button class="btn btn-ghost btn-sm" onclick="generateStoryboardVideo(${index})" id="vidBtn-${index}" ${item.videoStatus === 'pending' ? 'disabled' : ''}>${item.videoUrl ? '🎬 重新生成' : item.videoStatus === 'pending' ? '⏳ 生成中...' : '🎬 生成视频'}</button>
+        <button class="storyboard-audio-btn" onclick="generateStoryboardAudio(${index})" id="audioBtn-${index}">🔊 配音${item.audioUrl ? '✓' : ''}</button>
         <button class="btn btn-ghost btn-sm" onclick="editStoryboardItem(${index})">✏️ 编辑</button>
         <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteStoryboardItem(${index})">🗑️ 删除</button>
       </div>
@@ -3061,6 +3071,267 @@ async function generateAllVideos() {
   setTimeout(() => {
     if (progress) progress.style.display = 'none';
   }, 3000);
+}
+
+// ==================== v1.5 配音与字幕 ====================
+
+// 生成单个分镜配音（v1.5）
+async function generateStoryboardAudio(index) {
+  if (index < 0 || index >= currentStoryboard.length) return;
+
+  const item = currentStoryboard[index];
+  const btn = $(`#audioBtn-${index}`);
+
+  if (item.audioUrl) {
+    toast("此分镜已有配音");
+    return;
+  }
+
+  if (!item.dialogue && !item.description) {
+    toast("请先编辑分镜添加对话内容");
+    return;
+  }
+
+  if (isGenerating) {
+    toast("正在生成中，请稍候...");
+    return;
+  }
+
+  isGenerating = true;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" style="width:10px;height:10px;border-width:2px"></span>生成中...';
+  }
+
+  try {
+    // 使用对话内容作为TTS输入
+    const textToSpeak = item.dialogue || item.description;
+    toast(`正在生成第${item.num}镜配音...`);
+
+    // 调用TTS API（使用 Agnes AI 文本模型生成语音）
+    // 注意：目前需要集成第三方TTS服务，这里先模拟
+    const ttsResult = await apiTTS(textToSpeak);
+
+    if (ttsResult && ttsResult.audioUrl) {
+      currentStoryboard[index].audioUrl = ttsResult.audioUrl;
+      currentStoryboard[index].audioStatus = "done";
+      renderStoryboard(currentStoryboard);
+      toast(`第${item.num}镜配音生成完成`);
+    }
+  } catch (e) {
+    toast("配音生成失败：" + e.message);
+    console.error("配音生成错误:", e);
+  } finally {
+    isGenerating = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `🔊 配音${item.audioUrl ? '✓' : ''}`;
+    }
+  }
+}
+
+// TTS API（暂时使用占位实现）
+async function apiTTS(text) {
+  // TODO: 集成真实TTS服务（如Azure TTS、讯飞等）
+  // 目前返回模拟数据
+  return {
+    audioUrl: null,
+    message: "TTS服务尚未配置，请后续接入音频API"
+  };
+}
+
+// 批量生成分镜配音（v1.5）
+let isAudioGenerating = false;
+async function generateAllAudio() {
+  if (isAudioGenerating) {
+    toast("正在批量配音中，请稍候...");
+    return;
+  }
+  if (!currentStoryboard || currentStoryboard.length === 0) {
+    toast("暂无分镜");
+    return;
+  }
+
+  const btn = $("#genAllAudioBtn");
+  const progress = $("#storyboardProgress");
+  const progressBar = $("#storyboardProgressBar");
+  const progressText = $("#storyboardProgressText");
+
+  if (!btn || !progress) return;
+
+  isAudioGenerating = true;
+  btn.disabled = true;
+  btn.textContent = "配音中...";
+  progress.style.display = 'block';
+
+  let completed = 0;
+  let failed = 0;
+  const total = currentStoryboard.length;
+
+  for (let i = 0; i < total; i++) {
+    const item = currentStoryboard[i];
+
+    // 更新进度
+    if (progressBar) {
+      const pct = Math.round((i / total) * 100);
+      progressBar.style.width = pct + '%';
+    }
+    if (progressText) {
+      progressText.textContent = `正在配音第 ${i + 1}/${total} 镜...`;
+    }
+
+    // 跳过已有配音的
+    if (item.audioUrl) {
+      completed++;
+      continue;
+    }
+
+    try {
+      const textToSpeak = item.dialogue || item.description;
+      const ttsResult = await apiTTS(textToSpeak);
+
+      if (ttsResult && ttsResult.audioUrl) {
+        currentStoryboard[i].audioUrl = ttsResult.audioUrl;
+        currentStoryboard[i].audioStatus = "done";
+        renderStoryboard(currentStoryboard);
+        completed++;
+      }
+    } catch (e) {
+      console.error(`第${item.num}镜配音失败:`, e);
+      failed++;
+    }
+
+    // 短暂延迟避免请求过快
+    await new Promise(r => setTimeout(r, 500));
+  }
+
+  // 更新最终进度
+  if (progressBar) progressBar.style.width = '100%';
+  if (progressText) {
+    progressText.textContent = `配音完成！成功: ${completed}, 失败: ${failed}`;
+  }
+
+  isAudioGenerating = false;
+  btn.disabled = false;
+  btn.textContent = "🔊 批量配音";
+  toast(`批量配音完成！成功: ${completed}, 失败: ${failed}`);
+
+  setTimeout(() => {
+    if (progress) progress.style.display = 'none';
+  }, 3000);
+}
+
+// 批量生成分镜字幕（v1.5）
+let isSubtitleGenerating = false;
+async function generateAllSubtitles() {
+  if (isSubtitleGenerating) {
+    toast("正在批量生成字幕，请稍候...");
+    return;
+  }
+  if (!currentStoryboard || currentStoryboard.length === 0) {
+    toast("暂无分镜");
+    return;
+  }
+
+  const btn = $("#genAllSubBtn");
+  const progress = $("#storyboardProgress");
+  const progressBar = $("#storyboardProgressBar");
+  const progressText = $("#storyboardProgressText");
+
+  if (!btn || !progress) return;
+
+  isSubtitleGenerating = true;
+  btn.disabled = true;
+  btn.textContent = "生成中...";
+  progress.style.display = 'block';
+
+  let completed = 0;
+  let failed = 0;
+  const total = currentStoryboard.length;
+
+  for (let i = 0; i < total; i++) {
+    const item = currentStoryboard[i];
+
+    // 更新进度
+    if (progressBar) {
+      const pct = Math.round((i / total) * 100);
+      progressBar.style.width = pct + '%';
+    }
+    if (progressText) {
+      progressText.textContent = `正在生成第 ${i + 1}/${total} 镜字幕...`;
+    }
+
+    // 跳过已有字幕的
+    if (item.subtitle) {
+      completed++;
+      continue;
+    }
+
+    try {
+      // 使用剧本内容生成字幕
+      const subtitle = await generateSubtitleFromDrama(item);
+      if (subtitle) {
+        currentStoryboard[i].subtitle = subtitle;
+        renderStoryboard(currentStoryboard);
+        completed++;
+      }
+    } catch (e) {
+      console.error(`第${item.num}镜字幕生成失败:`, e);
+      failed++;
+    }
+
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  // 更新最终进度
+  if (progressBar) progressBar.style.width = '100%';
+  if (progressText) {
+    progressText.textContent = `字幕生成完成！成功: ${completed}, 失败: ${failed}`;
+  }
+
+  isSubtitleGenerating = false;
+  btn.disabled = false;
+  btn.textContent = "💬 批量字幕";
+  toast(`批量字幕完成！成功: ${completed}, 失败: ${failed}`);
+
+  setTimeout(() => {
+    if (progress) progress.style.display = 'none';
+  }, 3000);
+}
+
+// 根据分镜内容生成字幕
+async function generateSubtitleFromDrama(item) {
+  if (!item.description) return null;
+
+  try {
+    const systemPrompt = `你是短剧字幕专家，擅长将剧本描述转化为简洁的字幕文本。
+
+要求：
+1. 字幕要简洁有力，不超过20字
+2. 突出关键信息或情绪
+3. 使用口语化表达
+4. 只输出字幕内容，不要解释`;
+
+    const userPrompt = `请为以下分镜生成字幕：
+
+分镜描述：${item.description}
+镜头类型：${item.camera || '中景'}
+时长：${item.duration || '5秒'}
+
+请生成字幕：`;
+
+    const result = await apiChat([
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt }
+    ], 1000);
+
+    // 提取字幕内容
+    const subtitle = result.trim().replace(/^[“"‘'「『【]/, '').replace(/[”"』」】]$/, '').substring(0, 20);
+    return subtitle || null;
+  } catch (e) {
+    console.error("字幕生成失败:", e);
+    return null;
+  }
 }
 
 /* ================= 生成：图片 ================= */
