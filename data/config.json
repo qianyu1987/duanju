@@ -5,8 +5,9 @@
   "imageModel": "agnes-image-2.1-flash",
   "videoModel": "agnes-video-2.5-flash",
   "adminUsers": [],
-  "version": "1.5.0",
+  "version": "1.6.0",
   "changelog": [
+    "成片输出与分享：成片预览模式、导出文本剧本、生成分享链接、导出HTML离线预览页",
     "配音与字幕：AI自动生成单镜/批量配音（TTS），AI生成精简字幕，分镜支持音频播放和字幕显示",
     "v1.4: 图片动画化 - 分镜视频生成，支持单镜/批量生成",
     "分镜生成与可视化：AI自动生成分镜脚本，支持图片生成、编辑、导出",

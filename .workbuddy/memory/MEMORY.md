@@ -29,6 +29,9 @@ env -u NODE_OPTIONS node server.js   # PORT 3000；NODE_OPTIONS 的 --use-system
 - git status 里的 .workbuddy/、index.html.bak 删除记录是迁移时排除所致，属预期
 
 ## 版本记录
+### v1.6.0 (2026-08-28)
+- 成片输出与分享：成片预览模式、导出文本剧本、生成分享链接、导出HTML离线预览页
+
 ### v1.5.0 (2026-08-28)
 - 配音与字幕：AI自动生成单镜/批量配音（TTS占位），AI生成精简字幕，分镜支持音频播放和字幕显示
 
