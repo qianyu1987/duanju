@@ -29,6 +29,9 @@ env -u NODE_OPTIONS node server.js   # PORT 3000；NODE_OPTIONS 的 --use-system
 - git status 里的 .workbuddy/、index.html.bak 删除记录是迁移时排除所致，属预期
 
 ## 版本记录
+### v1.3.0 (2026-08-28)
+- 分镜生成与可视化：AI自动生成分镜脚本，支持图片生成、编辑、导出
+
 ### v1.2.0 (2026-08-28)
 - 角色一致性系统：角色库管理、参考图上传、剧本生成时自动关联角色
 - localStorage 持久化角色数据（key: wb_aistudio_role_lib）
