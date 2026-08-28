@@ -727,6 +727,65 @@ button:disabled{cursor:not-allowed;opacity:0.6}
   50% { opacity: 0.5; }
 }
 .fade-in { animation: fadeUp 0.3s var(--ease-out); }
+/* 短剧角色卡片 */
+.role-card{
+  background:#fff;border:1px solid var(--line);border-radius:12px;
+  padding:12px;margin-bottom:8px;transition:all .2s;
+}
+.role-card:hover{border-color:var(--primary);box-shadow:0 2px 8px rgba(124,92,255,.1)}
+.role-card .role-name{font-weight:700;color:var(--primary);margin-bottom:4px}
+.role-card .role-desc{font-size:12px;color:var(--sub);line-height:1.5}
+
+/* 短剧结果区 */
+.drama-result{
+  background:linear-gradient(135deg,#fff9f0 0%,#fff 100%);
+  border-color:oklch(var(--orange) / 0.3);
+}
+
+/* 模板保存 */
+.template-save{
+  margin-top:12px;padding:12px;background:var(--bg);border-radius:8px;
+  font-size:13px;color:var(--sub);
+}
+
+/* 高级选项 */
+details summary{
+  list-style:none;cursor:pointer;user-select:none;
+}
+details summary::-webkit-details-marker{display:none}
+details[open] summary{margin-bottom:8px}
+
+/* 角色库 */
+.role-lib{margin-top:16px}
+.role-lib-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.role-lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.role-lib-card{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:all .2s;cursor:pointer}
+.role-lib-card:hover{border-color:var(--pink);box-shadow:0 2px 12px rgba(236,72,153,.15)}
+.role-lib-card.selected{border-color:var(--pink);box-shadow:0 0 0 2px rgba(236,72,153,.3)}
+.role-lib-card .role-img{width:100%;height:140px;object-fit:cover;background:var(--bg)}
+.role-lib-card .role-info{padding:10px 12px}
+.role-lib-card .role-name{font-weight:700;color:var(--text);font-size:14px;margin-bottom:4px}
+.role-lib-card .role-desc{font-size:12px;color:var(--sub);line-height:1.4}
+.role-lib-card .role-actions{display:flex;gap:6px;padding:0 12px 10px}
+.role-lib-card .role-actions button{flex:1;font-size:11px;padding:4px 8px}
+.role-empty{text-align:center;padding:40px 20px;color:var(--sub)}
+.role-empty svg{width:48px;height:48px;margin-bottom:12px;opacity:0.3}
+.role-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.role-modal-inner{background:#fff;border-radius:16px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;padding:24px}
+.role-modal-title{font-size:18px;font-weight:700;margin-bottom:16px;color:var(--text)}
+.role-modal-close{float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--sub)}
+.role-modal-close:hover{color:var(--text)}
+.role-upload-area{border:2px dashed var(--line);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px}
+.role-upload-area:hover{border-color:var(--pink);background:rgba(236,72,153,.05)}
+.role-upload-area.has-img{border-style:solid;border-color:var(--pink);padding:8px}
+.role-upload-area img{max-width:100%;max-height:200px;border-radius:8px}
+.role-form-group{margin-bottom:12px}
+.role-form-group label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+.role-form-group input,.role-form-group textarea,.role-form-group select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#fff;color:var(--text)}
+.role-form-group input:focus,.role-form-group textarea:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 3px rgba(236,72,153,.1)}
+.role-form-actions{display:flex;gap:8px;margin-top:16px}
+.role-form-actions button{flex:1}
+
 </style>
 </head>
 <body>
@@ -976,30 +1035,110 @@ button:disabled{cursor:not-allowed;opacity:0.6}
       <section id="tab-drama" class="hidden">
         <div class="card">
           <div class="card-title"><span class="dot" style="background:var(--orange)"></span>短剧剧本生成</div>
+
+          <!-- 题材模板选择 -->
           <div class="template-chips" id="dramaChips">
-            <button class="chip active" data-t="甜宠">甜宠</button>
-            <button class="chip" data-t="逆袭爽剧">逆袭爽剧</button>
-            <button class="chip" data-t="悬疑">悬疑</button>
-            <button class="chip" data-t="都市情感">都市情感</button>
-            <button class="chip" data-t="重生虐渣">重生虐渣</button>
+            <button class="chip active" data-t="甜宠" data-icon="💕">甜宠</button>
+            <button class="chip" data-t="逆袭爽剧" data-icon="🔥">逆袭爽剧</button>
+            <button class="chip" data-t="悬疑" data-icon="🔍">悬疑</button>
+            <button class="chip" data-t="都市情感" data-icon="🏙️">都市情感</button>
+            <button class="chip" data-t="重生虐渣" data-icon="😈">重生虐渣</button>
+            <button class="chip" data-t="穿越" data-icon="⏰">穿越</button>
+            <button class="chip" data-t="科幻" data-icon="🚀">科幻</button>
+            <button class="chip" data-t="古风宫廷" data-icon="👑">古风宫廷</button>
           </div>
-          <div class="prompt-wrap">
-            <textarea id="dramaPrompt" rows="3" placeholder="输入短剧主题或设定，例如：高冷甜品师女主 vs 霸道总裁，女主靠祖传甜品配方翻身创业…"></textarea>
-            <span class="char-count" id="dramaCount">0</span>
-          </div>
-          <div class="row">
+
+          <!-- 剧本设置 -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
             <div>
               <label>剧集规模</label>
-              <select id="dramaEpisodes"><option value="3">前 3 集大纲</option><option value="5">前 5 集大纲</option><option value="10">前 10 集大纲</option></select>
+              <select id="dramaEpisodes">
+                <option value="3">3集（试水）</option>
+                <option value="5" selected>5集（标准）</option>
+                <option value="10">10集（完整）</option>
+                <option value="20">20集（长篇）</option>
+              </select>
             </div>
-            <div style="display:flex;align-items:flex-end">
-              <button class="btn btn-primary block" id="dramaBtn" onclick="genDrama()">生成剧本</button>
+            <div>
+              <label>每集时长</label>
+              <select id="dramaDuration">
+                <option value="1">1分钟（竖屏短视频）</option>
+                <option value="3" selected>3分钟（标准短剧）</option>
+                <option value="5">5分钟（加长版）</option>
+              </select>
             </div>
           </div>
-          <div class="key-hint" style="margin-top:10px;font-size:12.5px;color:var(--muted)">输出结构：剧名 + 一句话卖点 + 人物设定 + 故事梗概 + 分集大纲 + 第 1 集完整剧本（场景/对白/动作）。</div>
+
+          <div class="prompt-wrap" style="margin-top:12px">
+            <textarea id="dramaPrompt" rows="4" placeholder="输入短剧主题或设定&#10;例如：高冷甜品师女主 vs 霸道总裁，女主靠祖传甜品配方翻身创业，被男主发现是青梅竹马..."></textarea>
+            <span class="char-count" id="dramaCount">0</span>
+          </div>
+
+          <!-- 高级选项 -->
+          <details style="margin-top:12px">
+            <summary style="cursor:pointer;color:var(--sub);font-size:13px">高级选项（可选）</summary>
+            <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label>主角性别</label>
+                <select id="dramaGender">
+                  <option value="女">女主视角</option>
+                  <option value="男">男主视角</option>
+                  <option value="双">双视角切换</option>
+                </select>
+              </div>
+              <div>
+                <label>结局类型</label>
+                <select id="dramaEnding">
+                  <option value="HE">HE（大团圆）</option>
+                  <option value="BE">BE（悲剧）</option>
+                  <option value="OE">OE（开放式）</option>
+                </select>
+              </div>
+            </div>
+          </details>
+
+          <div style="display:flex;align-items:center;gap:8px;margin-top:16px">
+            <button class="btn btn-primary" style="flex:1" id="dramaBtn" onclick="genDrama()">🎬 生成剧本</button>
+            <button class="btn btn-ghost btn-sm" onclick="saveDramaTemplate()" title="保存为模板">💾 保存模板</button>
+          </div>
+
+          <!-- 已选角色预览 -->
+          <div id="selectedRolePreview" style="display:none;margin-top:12px;padding:12px;background:rgba(236,72,153,.05);border-radius:8px;border:1px solid rgba(236,72,153,.2)">
+            <div style="font-size:12px;color:var(--pink);font-weight:600;margin-bottom:6px">📌 已关联角色</div>
+            <div id="selectedRoleInfo" style="display:flex;align-items:center;gap:10px"></div>
+          </div>
+
+          <div class="key-hint" style="margin-top:10px;font-size:12.5px;color:var(--muted)">
+            ✨ 输出结构：剧名 + 一句话卖点 + 人物设定 + 故事梗概 + 分集大纲 + 完整剧本（场景/对白/动作/镜头提示）
+          </div>
+
           <div id="dramaResult"></div>
         </div>
-        <h3 class="sec">我的短剧历史</h3>
+
+        <!-- 角色库管理 -->
+        <div class="card role-lib">
+          <div class="role-lib-header">
+            <div class="card-title" style="margin:0"><span class="dot" style="background:var(--pink)"></span>角色库（<span id="roleLibCount">0</span>个角色）</div>
+            <button class="btn btn-primary btn-sm" onclick="openRoleModal()">+ 新建角色</button>
+          </div>
+          <div id="roleLibGrid" class="role-lib-grid"></div>
+          <div id="roleLibEmpty" class="role-empty" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <div>暂无角色，点击上方按钮创建</div>
+          </div>
+        </div>
+
+        <!-- 角色设定（剧本生成后显示） -->
+        <div class="card" id="dramaRoleCard" style="display:none;margin-top:16px">
+          <div class="card-title"><span class="dot" style="background:var(--orange)"></span>剧本角色设定</div>
+          <div id="dramaRoles"></div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="addDramaRole()">+ 添加角色</button>
+          <div style="margin-top:12px;font-size:12px;color:var(--sub)">
+            💡 可从上方角色库选择已有角色关联到此剧本
+          </div>
+        </div>
+
+        <h3 class="sec" style="margin-top:24px">我的短剧历史</h3>
         <div id="dramaHist"></div>
       </section>
 
@@ -1365,7 +1504,7 @@ function switchTab(tab, noScroll) {
   if (tab === "text") renderTypeHist("text", "#textHist");
   if (tab === "image") renderTypeHist("image", "#imgHist");
   if (tab === "video") renderTypeHist("video", "#vidHist");
-  if (tab === "drama") renderTypeHist("drama", "#dramaHist");
+  if (tab === "drama") { renderTypeHist("drama", "#dramaHist"); renderRoleLib(); }
   if (tab === "community") {
     if (commView === "board") loadMessages();
     else { squareType = commView; loadSquare(true); }
@@ -2000,8 +2139,193 @@ const DRAMA_TMPL = {
   "逆袭爽剧": "逆袭爽剧：开局被碾压、打脸反派、身份反转，节奏快、爽点密。",
   "悬疑": "悬疑风格：强设定、双线叙事、每集留钩子，最后反转。",
   "都市情感": "都市情感：现实向、三观碰撞、成长线，情绪拉扯强。",
-  "重生虐渣": "重生虐渣：女主重生复仇、手撕渣男渣女、事业线爽感。"
+  "重生虐渣": "重生虐渣：女主重生复仇、手撕渣男渣女、事业线爽感。",
+  "穿越": "穿越风格：古今碰撞、身份错位、文化冲突制造笑点和泪点。",
+  "科幻": "科幻风格：未来设定、科技伦理、人性探讨。",
+  "古风宫廷": "古风宫廷：权谋斗争、后宫争霸、爱恨纠葛。"
 };
+
+// 保存的自定义模板
+const DRAMA_TEMPLATES = JSON.parse(localStorage.getItem('drama_templates') || '{}');
+
+/* ================= 角色库（v1.2） ================= */
+const LS_ROLE_LIB = "wb_aistudio_role_lib";
+let ROLE_LIB = [];
+try { ROLE_LIB = JSON.parse(localStorage.getItem(LS_ROLE_LIB) || "[]") || []; } catch (e) { ROLE_LIB = []; }
+function saveRoleLib() { localStorage.setItem(LS_ROLE_LIB, JSON.stringify(ROLE_LIB)); }
+
+let currentRoleId = null; // 当前选中的角色ID（用于关联到剧本）
+let editingRoleId = null; // 当前正在编辑的角色ID
+
+function renderRoleLib() {
+  const grid = $("#roleLibGrid");
+  const empty = $("#roleLibEmpty");
+  const count = $("#roleLibCount");
+
+  if (!grid || !empty) return;
+
+  count.textContent = ROLE_LIB.length;
+
+  if (ROLE_LIB.length === 0) {
+    grid.innerHTML = "";
+    empty.style.display = "block";
+    return;
+  }
+
+  empty.style.display = "none";
+  grid.innerHTML = ROLE_LIB.map(r => `
+    <div class="role-lib-card ${r.id === currentRoleId ? 'selected' : ''}" onclick="selectRole('${r.id}')">
+      ${r.image ? `<img src="${esc(safeMediaUrl(r.image))}" class="role-img" alt="${esc(r.name)}">` : '<div class="role-img" style="display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--sub)">🎭</div>'}
+      <div class="role-info">
+        <div class="role-name">${esc(r.name)}</div>
+        <div class="role-desc">${esc(r.desc || "暂无描述")}</div>
+      </div>
+      <div class="role-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-ghost btn-sm" onclick="editRole('${r.id}')">编辑</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteRole('${r.id}')">删除</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectRole(id) {
+  currentRoleId = currentRoleId === id ? null : id;
+  renderRoleLib();
+  updateSelectedRolePreview();
+  if (currentRoleId) {
+    const r = ROLE_LIB.find(x => x.id === id);
+    toast(`已选择角色：${r?.name || '未知'}`);
+  }
+}
+
+function updateSelectedRolePreview() {
+  const preview = $("#selectedRolePreview");
+  const info = $("#selectedRoleInfo");
+  if (!preview || !info) return;
+
+  if (currentRoleId) {
+    const r = ROLE_LIB.find(x => x.id === currentRoleId);
+    if (r) {
+      preview.style.display = "block";
+      info.innerHTML = r.image
+        ? `<img src="${esc(safeMediaUrl(r.image))}" style="width:40px;height:40px;border-radius:8px;object-fit:cover">
+           <div>
+             <div style="font-weight:700;color:var(--text)">${esc(r.name)}</div>
+             <div style="font-size:11px;color:var(--sub)">${esc(r.desc?.substring(0, 50) || '暂无描述')}...</div>
+           </div>
+           <button class="btn btn-ghost btn-sm" onclick="selectRole('${r.id}')" title="取消选择">✕</button>`
+        : `<div>
+             <div style="font-weight:700;color:var(--text)">${esc(r.name)}</div>
+             <div style="font-size:11px;color:var(--sub)">${esc(r.desc?.substring(0, 50) || '暂无描述')}</div>
+           </div>
+           <button class="btn btn-ghost btn-sm" onclick="selectRole('${r.id}')" title="取消选择">✕</button>`;
+    }
+  } else {
+    preview.style.display = "none";
+  }
+}
+
+function openRoleModal(roleId) {
+  editingRoleId = roleId || null;
+  const role = roleId ? ROLE_LIB.find(x => x.id === roleId) : null;
+
+  const modal = document.createElement("div");
+  modal.className = "role-modal";
+  modal.id = "roleModal";
+  modal.innerHTML = `
+    <div class="role-modal-inner">
+      <button class="role-modal-close" onclick="closeRoleModal()">×</button>
+      <div class="role-modal-title">${role ? '编辑角色' : '新建角色'}</div>
+      <div class="role-upload-area" id="roleUploadArea" onclick="document.getElementById('roleImageInput').click()" ${role?.image ? 'class="has-img"' : ''}>
+        ${role?.image ? `<img src="${esc(safeMediaUrl(role.image))}" alt="角色图片">` : '<div>📷 点击上传图片（可选）</div>'}
+      </div>
+      <input type="file" id="roleImageInput" accept="image/*" style="display:none" onchange="handleRoleImage(this)">
+      <div class="role-form-group">
+        <label>角色名称</label>
+        <input type="text" id="roleNameInput" placeholder="输入角色名称" value="${role?.name || ''}">
+      </div>
+      <div class="role-form-group">
+        <label>外貌特征</label>
+        <textarea id="roleDescInput" rows="3" placeholder="描述角色的外貌、性格、服装风格等...">${role?.desc || ''}</textarea>
+      </div>
+      <div class="role-form-actions">
+        <button class="btn btn-ghost" onclick="closeRoleModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveRoleFromModal()">保存</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.addEventListener("click", e => { if (e.target === modal) closeRoleModal(); });
+}
+
+function closeRoleModal() {
+  const modal = $("#roleModal");
+  if (modal) modal.remove();
+}
+
+function handleRoleImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const base64 = e.target.result;
+    const area = $("#roleUploadArea");
+    area.classList.add("has-img");
+    area.innerHTML = `<img src="${esc(base64)}" alt="角色图片">`;
+    area.dataset.image = base64;
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveRoleFromModal() {
+  const name = ($("#roleNameInput")?.value || "").trim();
+  const desc = ($("#roleDescInput")?.value || "").trim();
+  const area = $("#roleUploadArea");
+  const image = area?.dataset?.image || "";
+
+  if (!name) { toast("请输入角色名称"); return; }
+
+  if (editingRoleId) {
+    const idx = ROLE_LIB.findIndex(x => x.id === editingRoleId);
+    if (idx !== -1) {
+      ROLE_LIB[idx] = { ...ROLE_LIB[idx], name, desc, image };
+    }
+  } else {
+    ROLE_LIB.push({
+      id: uid(),
+      name,
+      desc,
+      image,
+      createdAt: Date.now()
+    });
+  }
+
+  saveRoleLib();
+  renderRoleLib();
+  closeRoleModal();
+  toast(editingRoleId ? "角色已更新" : "角色已创建");
+}
+
+function editRole(id) {
+  openRoleModal(id);
+}
+
+function deleteRole(id) {
+  if (!confirm("确定要删除这个角色吗？")) return;
+  ROLE_LIB = ROLE_LIB.filter(x => x.id !== id);
+  if (currentRoleId === id) currentRoleId = null;
+  saveRoleLib();
+  renderRoleLib();
+  toast("角色已删除");
+}
+
+// 获取选中角色的参考图URL
+function getSelectedRoleImage() {
+  if (!currentRoleId) return null;
+  const r = ROLE_LIB.find(x => x.id === currentRoleId);
+  return r?.image || null;
+}
+
 function currentDramaChip() { const c = document.querySelector("#dramaChips .chip.active"); return c ? c.dataset.t : "甜宠"; }
 $$("#dramaChips .chip").forEach(c => c.addEventListener("click", () => {
   $$("#dramaChips .chip").forEach(x => x.classList.remove("active")); c.classList.add("active");
@@ -2012,37 +2336,180 @@ async function genDrama() {
   const prompt = $("#dramaPrompt").value.trim();
   if (!prompt) { toast("请输入短剧主题或设定"); return; }
   const eps = $("#dramaEpisodes").value;
+  const duration = $("#dramaDuration").value;
+  const gender = $("#dramaGender")?.value || "女";
+  const ending = $("#dramaEnding")?.value || "HE";
   const style = DRAMA_TMPL[currentDramaChip()];
+
+  // 收集已选角色信息
+  let roleContext = "";
+  if (currentRoleId) {
+    const r = ROLE_LIB.find(x => x.id === currentRoleId);
+    if (r) {
+      roleContext = `\n\n【已选角色参考】\n角色名：${r.name}\n外貌特征：${r.desc || '无'}\n${r.image ? '（已上传参考图，请在生成角色图片时使用）' : ''}`;
+    }
+  }
+
   setBusy("dramaBtn", true, "生成中…");
-  $("#dramaResult").innerHTML = '<div class="loading-tip"><span class="spinner"></span>AI 正在构思剧本，约需 20-40 秒…</div>';
+  $("#dramaResult").innerHTML = '<div class="loading-tip"><span class="spinner"></span>AI 正在构思剧本，约需 30-60 秒…</div>';
+
   try {
+    // 构建更详细的提示词
+    const systemPrompt = `你是金牌短剧编剧，精通竖屏短剧创作。
+
+【剧本结构要求】
+1. 【剧名】：吸引人的短剧名称（8-12字）
+2. 【一句话卖点】：15字以内概括核心冲突
+3. 【人物设定】：
+   - 主角：姓名、年龄、职业、性格特征、外貌描写
+   - 反派：姓名、与主角关系、动机
+   - 配角：2-3个关键配角
+4. 【故事梗概】：100字内概述完整故事线
+5. 【分集大纲】：${eps}集，每集用一句话概括核心事件+钩子
+6. 【第1集完整剧本】：
+   - 场景标注（内/外、日/夜、地点）
+   - 角色对白（标注说话者）
+   - 动作描述（简洁有力）
+   - 镜头提示（特写/中景/全景/摇镜头等）
+   - 时长标注（每场戏预计时长）
+
+【风格要求】${style}
+【主角性别】${gender}视角
+【结局类型】${ending}
+【单集时长】约${duration}分钟${roleContext}
+直接输出剧本，不要多余解释。`;
+
+    const userPrompt = `短剧主题：${prompt}\n请生成完整剧本。`;
+
     const text = await apiChat([
-      { role: "system", content: "你是金牌短剧编剧，精通竖屏短剧节奏（3秒钩子、10秒爽点、结尾反转）。输出结构化剧本：\n【剧名】\n【一句话卖点】\n【人物设定】（主角/反派/配角，含年龄职业性格）\n【故事梗概】\n【分集大纲】（每集一句话钩子）\n【第1集完整剧本】（按场景写：场景/对白/动作/镜头提示）\n风格要求：" + style + "\n直接输出，不要多余解释。" },
-      { role: "user", content: "短剧主题：" + prompt + "\n请输出前 " + eps + " 集大纲和第 1 集完整剧本。" }
-    ], 6000);
-    const post = await req("/posts", { method: "POST", body: JSON.stringify({ type: "drama", prompt, params: { style: currentDramaChip(), eps }, result: { text }, status: "done" }) });
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt }
+    ], 8000);
+
+    // 解析角色信息
+    const characters = parseCharacters(text);
+
+    const post = await req("/posts", {
+      method: "POST",
+      body: JSON.stringify({
+        type: "drama",
+        prompt,
+        params: {
+          style: currentDramaChip(),
+          eps,
+          duration,
+          gender,
+          ending,
+          characters: characters.map(c => ({ name: c.name, desc: c.desc }))
+        },
+        result: { text },
+        status: "done"
+      })
+    });
+
     const item = Object.assign({ viewed: false }, post);
     HIST.push(item); saveHist();
-    $("#dramaResult").innerHTML = '<div class="result-box">' + esc(text) + '</div>' +
+
+    // 显示剧本结果
+    $("#dramaResult").innerHTML =
+      '<div class="result-box drama-result">' + esc(text) + '</div>' +
       '<div class="result-actions">' +
-      '<button class="btn btn-ghost btn-sm" onclick="copyText(this)">' + icon("copy", 14) + '复制</button>' +
-      '<button class="btn btn-ghost btn-sm" onclick="downloadDrama()">' + icon("dl", 14) + '下载 txt</button>' +
-      '<button class="btn btn-primary btn-sm" onclick="viewItem(\'' + item.id + '\')">' + icon("eye", 14) + '存入历史</button>' +
+        '<button class="btn btn-ghost btn-sm" onclick="copyText(this)">' + icon("copy", 14) + '复制剧本</button>' +
+        '<button class="btn btn-ghost btn-sm" onclick="downloadDrama()">' + icon("dl", 14) + '下载txt</button>' +
+        '<button class="btn btn-ghost btn-sm" onclick="shareDrama(\'' + item.id + '\')">' + icon("share", 14) + '分享</button>' +
+        '<button class="btn btn-primary btn-sm" onclick="viewItem(\'' + item.id + '\')">' + icon("eye", 14) + '存入历史</button>' +
       '</div>';
+
+    // 显示角色卡片
+    if (characters.length > 0) {
+      showDramaRoles(characters);
+    }
+
     toast("剧本生成完成，已发布到广场");
   } catch (e) {
     $("#dramaResult").innerHTML = '<div class="result-box" style="border-color:#f5c2c2;color:var(--red)">生成失败：' + esc(e.message) + '</div>';
   }
   setBusy("dramaBtn", false);
 }
-function downloadDrama() {
-  const box = document.querySelector("#tab-drama .result-box");
-  if (!box) return;
-  const blob = new Blob([box.textContent], { type: "text/plain;charset=utf-8" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "短剧剧本_" + new Date().toISOString().slice(0, 10) + ".txt";
-  a.click(); URL.revokeObjectURL(a.href);
+
+// 解析角色信息
+function parseCharacters(text) {
+  const chars = [];
+  const regex = /[-*]?\s*(主角|反派|配角)?[:：]\s*([^\n]+)/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    const role = match[1] || '角色';
+    const desc = match[2].trim();
+    if (desc.length > 3 && desc.length < 100) {
+      chars.push({ name: desc.split(/[,，]/)[0], desc: desc });
+    }
+  }
+  return chars.slice(0, 5); // 最多5个角色
+}
+
+// 显示角色卡片
+function showDramaRoles(characters) {
+  const card = $("#dramaRoleCard");
+  const container = $("#dramaRoles");
+  if (!card || !container) return;
+
+  card.style.display = 'block';
+  container.innerHTML = characters.map(c => {
+    // 尝试从角色库匹配角色
+    const matchedRole = ROLE_LIB.find(r => r.name === c.name || c.name.includes(r.name) || r.name.includes(c.name));
+    const imgHtml = matchedRole?.image
+      ? `<img src="${esc(safeMediaUrl(matchedRole.image))}" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:6px">`
+      : `<div style="width:100%;height:80px;background:var(--bg);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;color:var(--sub);font-size:24px">🎭</div>`;
+    return '<div class="role-card" style="display:inline-block;width:calc(50% - 6px);margin:4px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--line)">' +
+      imgHtml +
+      '<div style="font-weight:700;color:var(--primary)">' + esc(c.name) + '</div>' +
+      '<div style="font-size:12px;color:var(--sub);margin-top:4px">' + esc(c.desc) + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+// 分享剧本
+async function shareDrama(id) {
+  const shareUrl = window.location.origin + '/drama/' + id;
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    toast("分享链接已复制");
+  } catch (e) {
+    prompt("复制分享链接：", shareUrl);
+  }
+}
+
+// 保存为模板
+function saveDramaTemplate() {
+  const name = prompt("请输入模板名称：");
+  if (!name) return;
+
+  const template = {
+    name,
+    style: currentDramaChip(),
+    eps: $("#dramaEpisodes").value,
+    duration: $("#dramaDuration").value,
+    prompt: $("#dramaPrompt").value,
+    createdAt: Date.now()
+  };
+
+  DRAMA_TEMPLATES[name] = template;
+  localStorage.setItem('drama_templates', JSON.stringify(DRAMA_TEMPLATES));
+  toast("模板已保存");
+}
+
+// 加载保存的模板
+function loadDramaTemplate(name) {
+  const t = DRAMA_TEMPLATES[name];
+  if (!t) return;
+  $("#dramaPrompt").value = t.prompt || '';
+  $("#dramaEpisodes").value = t.eps || '5';
+  $("#dramaDuration").value = t.duration || '3';
+  // 激活对应题材
+  $$("#dramaChips .chip").forEach(c => {
+    c.classList.toggle('active', c.dataset.t === t.style);
+  });
+  toast("模板已加载");
 }
 
 /* ================= 生成：图片 ================= */
