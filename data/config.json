@@ -5,8 +5,9 @@
   "imageModel": "agnes-image-2.1-flash",
   "videoModel": "agnes-video-2.5-flash",
   "adminUsers": [],
-  "version": "1.0.40",
+  "version": "1.0.50",
   "changelog": [
+    "视频工坊参考图改为上传模式，支持本地图片，可选0-4张",
     "改进额度显示：进度条+直观剩余量",
     "优化卡片间距和布局",
     "改进额度显示：进度条+直观剩余量",
