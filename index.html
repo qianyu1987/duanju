@@ -742,6 +742,30 @@ button:disabled{cursor:not-allowed;opacity:0.6}
   border-color:oklch(var(--orange) / 0.3);
 }
 
+/* 分镜编辑器 */
+.storyboard-section{margin-top:20px;border-top:1px solid var(--line);padding-top:20px}
+.storyboard-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.storyboard-header h3{margin:0;font-size:16px;color:var(--text)}
+.storyboard-list{display:flex;flex-direction:column;gap:12px}
+.storyboard-item{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;transition:all .2s}
+.storyboard-item:hover{border-color:var(--purple);box-shadow:0 2px 8px rgba(139,92,246,.1)}
+.storyboard-item.active{border-color:var(--purple);box-shadow:0 0 0 2px rgba(139,92,246,.2)}
+.storyboard-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.storyboard-num{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--primary));color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.storyboard-meta{display:flex;gap:8px;flex-wrap:wrap;flex:1}
+.storyboard-tag{font-size:11px;padding:2px 8px;border-radius:4px;background:var(--bg);color:var(--sub)}
+.storyboard-tag.camera{background:rgba(139,92,246,.1);color:var(--purple)}
+.storyboard-tag.angle{background:rgba(249,115,22,.1);color:var(--orange)}
+.storyboard-tag.duration{background:rgba(34,197,94,.1);color:#16a34a}
+.storyboard-content{font-size:13px;color:var(--text);line-height:1.6;margin-bottom:10px}
+.storyboard-img{width:100%;max-width:320px;height:180px;object-fit:cover;border-radius:8px;background:var(--bg);margin-bottom:10px;display:block}
+.storyboard-img-placeholder{width:100%;max-width:320px;height:120px;border-radius:8px;background:linear-gradient(135deg,var(--bg) 0%,oklch(var(--bg) / 0.5) 100%);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:13px;margin-bottom:10px}
+.storyboard-actions{display:flex;gap:6px;flex-wrap:wrap}
+.storyboard-actions button{font-size:11px;padding:4px 10px}
+.storyboard-loading{text-align:center;padding:20px;color:var(--sub)}
+.storyboard-progress{margin-top:12px;height:4px;background:var(--bg);border-radius:2px;overflow:hidden}
+.storyboard-progress-bar{height:100%;background:linear-gradient(90deg,var(--purple),var(--primary));border-radius:2px;transition:width .3s}
+
 /* 模板保存 */
 .template-save{
   margin-top:12px;padding:12px;background:var(--bg);border-radius:8px;
@@ -1113,6 +1137,22 @@ details[open] summary{margin-bottom:8px}
           </div>
 
           <div id="dramaResult"></div>
+
+          <!-- 分镜编辑器 -->
+          <div class="storyboard-section" id="storyboardSection" style="display:none">
+            <div class="storyboard-header">
+              <h3><span class="dot" style="background:var(--purple)"></span>分镜脚本</h3>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-ghost btn-sm" onclick="autoGenerateStoryboard()" id="storyboardGenBtn" ${isGenerating ? 'disabled' : ''}>🎬 AI生成分镜</button>
+                <button class="btn btn-ghost btn-sm" onclick="exportStoryboard()" ${!currentStoryboard || currentStoryboard.length === 0 ? 'disabled' : ''}>📤 导出分镜</button>
+              </div>
+            </div>
+            <div id="storyboardList" class="storyboard-list"></div>
+            <div id="storyboardProgress" class="storyboard-progress" style="display:none">
+              <div class="storyboard-progress-bar" id="storyboardProgressBar" style="width:0%"></div>
+              <div style="font-size:12px;color:var(--sub);margin-top:4px" id="storyboardProgressText">生成中...</div>
+            </div>
+          </div>
         </div>
 
         <!-- 角色库管理 -->
@@ -1474,7 +1514,8 @@ function icon(name, size) {
     retry: '<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>',
     del: '<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>',
     eye: '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.5"/>',
-    refresh: '<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>'
+    refresh: '<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>',
+    film: '<rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/>'
   };
   return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (I[name] || "") + "</svg>";
 }
@@ -2148,6 +2189,11 @@ const DRAMA_TMPL = {
 // 保存的自定义模板
 const DRAMA_TEMPLATES = JSON.parse(localStorage.getItem('drama_templates') || '{}');
 
+// v1.3 分镜相关全局变量
+let currentDramaText = '';    // 当前剧本文本
+let currentDramaCharacters = []; // 当前剧本角色
+let currentDramaEpisodes = 5; // 当前集数
+
 /* ================= 角色库（v1.2） ================= */
 const LS_ROLE_LIB = "wb_aistudio_role_lib";
 let ROLE_LIB = [];
@@ -2410,6 +2456,11 @@ async function genDrama() {
     const item = Object.assign({ viewed: false }, post);
     HIST.push(item); saveHist();
 
+    // 保存当前剧本信息供分镜使用
+    currentDramaText = text;
+    currentDramaCharacters = characters;
+    currentDramaEpisodes = eps;
+
     // 显示剧本结果
     $("#dramaResult").innerHTML =
       '<div class="result-box drama-result">' + esc(text) + '</div>' +
@@ -2418,11 +2469,19 @@ async function genDrama() {
         '<button class="btn btn-ghost btn-sm" onclick="downloadDrama()">' + icon("dl", 14) + '下载txt</button>' +
         '<button class="btn btn-ghost btn-sm" onclick="shareDrama(\'' + item.id + '\')">' + icon("share", 14) + '分享</button>' +
         '<button class="btn btn-primary btn-sm" onclick="viewItem(\'' + item.id + '\')">' + icon("eye", 14) + '存入历史</button>' +
+        '<button class="btn btn-ghost btn-sm" onclick="autoGenerateStoryboard()">' + icon("film", 14) + '生成分镜</button>' +
       '</div>';
 
     // 显示角色卡片
     if (characters.length > 0) {
       showDramaRoles(characters);
+    }
+
+    // 自动显示分镜区域（如果已存在分镜数据）
+    if (currentStoryboard && currentStoryboard.length > 0) {
+      const section = $("#storyboardSection");
+      if (section) section.style.display = 'block';
+      renderStoryboard(currentStoryboard);
     }
 
     toast("剧本生成完成，已发布到广场");
@@ -2510,6 +2569,298 @@ function loadDramaTemplate(name) {
     c.classList.toggle('active', c.dataset.t === t.style);
   });
   toast("模板已加载");
+}
+
+/* ================= 分镜生成与可视化（v1.3） ================= */
+let currentStoryboard = []; // 当前分镜数据
+let isGenerating = false;   // 生成中状态
+
+// 解析剧本文本为分镜
+function parseStoryboards(text) {
+  const scenes = [];
+  // 按场景分割：匹配【场景X】或数字列表或换行分隔
+  const lines = text.split('\n').filter(l => l.trim());
+
+  let currentScene = null;
+  for (const line of lines) {
+    // 检测场景标题
+    const sceneMatch = line.match(/(?:场景|场)[\s：:]*(\d+)/i);
+    if (sceneMatch) {
+      if (currentScene) scenes.push(currentScene);
+      currentScene = {
+        num: parseInt(sceneMatch[1]),
+        title: line.trim(),
+        description: '',
+        camera: '',
+        angle: '',
+        duration: '',
+        dialogue: '',
+        image: null
+      };
+      continue;
+    }
+
+    // 检测镜头提示
+    const cameraMatch = line.match(/(?:镜头|景别)[\s：:]*(.+?)[；;。]?\s*$/);
+    if (cameraMatch && currentScene) {
+      currentScene.camera = cameraMatch[1].trim();
+      continue;
+    }
+
+    // 检测角度
+    const angleMatch = line.match(/(?:角度|机位)[\s：:]*(.+?)[；;。]?\s*$/);
+    if (angleMatch && currentScene) {
+      currentScene.angle = angleMatch[1].trim();
+      continue;
+    }
+
+    // 检测时长
+    const durationMatch = line.match(/(?:时长|约?(\d+)秒|(\d+)分钟)/);
+    if (durationMatch && currentScene) {
+      if (durationMatch[1]) currentScene.duration = durationMatch[1] + '秒';
+      else if (durationMatch[2]) currentScene.duration = durationMatch[2] + '分钟';
+      continue;
+    }
+
+    // 累积描述
+    if (currentScene) {
+      currentScene.description += line.trim() + ' ';
+    }
+  }
+  if (currentScene) scenes.push(currentScene);
+
+  // 如果没有场景标记，按段落分割
+  if (scenes.length === 0) {
+    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 20);
+    paragraphs.forEach((p, i) => {
+      scenes.push({
+        num: i + 1,
+        title: `场景${i + 1}`,
+        description: p.trim().substring(0, 200),
+        camera: '',
+        angle: '',
+        duration: '',
+        dialogue: '',
+        image: null
+      });
+    });
+  }
+
+  // 限制最多20个分镜
+  return scenes.slice(0, 20);
+}
+
+// 渲染分镜列表
+function renderStoryboard(items) {
+  const list = $("#storyboardList");
+  if (!list) return;
+
+  currentStoryboard = items;
+
+  if (!items || items.length === 0) {
+    list.innerHTML = '<div class="storyboard-loading">暂无分镜，点击「AI生成分镜」按钮生成</div>';
+    return;
+  }
+
+  list.innerHTML = items.map((item, index) => `
+    <div class="storyboard-item" id="storyboard-${index}">
+      <div class="storyboard-top">
+        <div class="storyboard-num">${item.num}</div>
+        <div class="storyboard-meta">
+          ${item.camera ? `<span class="storyboard-tag camera">${esc(item.camera)}</span>` : ''}
+          ${item.angle ? `<span class="storyboard-tag angle">${esc(item.angle)}</span>` : ''}
+          ${item.duration ? `<span class="storyboard-tag duration">${esc(item.duration)}</span>` : ''}
+        </div>
+      </div>
+      <div class="storyboard-content">${esc(item.description)}</div>
+      ${item.image ?
+        `<img src="${esc(safeMediaUrl(item.image))}" class="storyboard-img" alt="分镜图${item.num}">` :
+        `<div class="storyboard-img-placeholder">🎬 点击生成图片</div>`
+      }
+      <div class="storyboard-actions">
+        <button class="btn btn-primary btn-sm" onclick="generateStoryboardImage(${index})">🎨 生成图片</button>
+        <button class="btn btn-ghost btn-sm" onclick="editStoryboardItem(${index})">✏️ 编辑</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteStoryboardItem(${index})">🗑️ 删除</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// AI 生成分镜
+async function autoGenerateStoryboard() {
+  if (isGenerating) return;
+  if (!currentDramaText) {
+    toast("请先生成剧本");
+    return;
+  }
+
+  isGenerating = true;
+  const btn = $("#storyboardGenBtn");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "生成中...";
+  }
+
+  const progress = $("#storyboardProgress");
+  const progressBar = $("#storyboardProgressBar");
+  const progressText = $("#storyboardProgressText");
+  if (progress) progress.style.display = 'block';
+
+  try {
+    const systemPrompt = `你是专业短剧分镜师，擅长将剧本转化为可视化分镜脚本。
+
+【输出格式要求】
+严格按照以下JSON格式输出，不要添加任何解释：
+[
+  {
+    "num": 1,
+    "title": "场景标题",
+    "description": "画面描述（100字内）",
+    "camera": "全景/中景/特写/近景",
+    "angle": "平视/仰视/俯视/侧面",
+    "duration": "5秒/10秒",
+    "dialogue": "对白内容（如有）",
+    "image_prompt": "用于生成参考图的英文提示词"
+  }
+]`;
+
+    const userPrompt = `请根据以下剧本生成 ${Math.min(currentDramaEpisodes || 5, 10)} 个关键分镜：
+
+${currentDramaText.substring(0, 2000)}
+
+【已有角色设定】
+${currentDramaCharacters ? currentDramaCharacters.map(c => `角色名：${c.name}，描述：${c.desc}`).join('\n') : '无'}
+
+请输出JSON格式的分镜列表。`;
+
+    const result = await apiChat([
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt }
+    ], 4000);
+
+    // 解析JSON
+    let scenes;
+    try {
+      // 尝试提取JSON
+      const jsonMatch = result.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        scenes = JSON.parse(jsonMatch[0]);
+      } else {
+        // 如果解析失败，手动分割
+        scenes = parseStoryboards(result);
+      }
+    } catch (e) {
+      scenes = parseStoryboards(result);
+    }
+
+    // 确保有有效数据
+    if (!Array.isArray(scenes) || scenes.length === 0) {
+      scenes = parseStoryboards(currentDramaText);
+    }
+
+    // 为每个场景添加默认值
+    scenes = scenes.map((s, i) => ({
+      num: s.num || i + 1,
+      title: s.title || `场景${i + 1}`,
+      description: s.description || '',
+      camera: s.camera || '中景',
+      angle: s.angle || '平视',
+      duration: s.duration || '5秒',
+      dialogue: s.dialogue || '',
+      image: s.image || null,
+      imagePrompt: s.image_prompt || ''
+    })).slice(0, 15);
+
+    renderStoryboard(scenes);
+
+    // 显示分镜区域
+    const section = $("#storyboardSection");
+    if (section) section.style.display = 'block';
+
+    toast(`已生成 ${scenes.length} 个分镜`);
+  } catch (e) {
+    toast("分镜生成失败：" + e.message);
+    console.error("分镜生成错误:", e);
+  } finally {
+    isGenerating = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "🎬 AI生成分镜";
+    }
+    if (progress) progress.style.display = 'none';
+  }
+}
+
+// 生成单个分镜图片
+async function generateStoryboardImage(index) {
+  if (index < 0 || index >= currentStoryboard.length) return;
+
+  const item = currentStoryboard[index];
+  const prompt = item.imagePrompt || `${item.description}, ${item.camera} shot, ${item.angle}, short drama style, vertical video`;
+
+  toast(`正在生成第${item.num}镜图片...`);
+
+  try {
+    const result = await apiImage(prompt, "1080x1920", "9:16");
+    const imgUrl = result.url || result.b64;
+
+    if (imgUrl) {
+      currentStoryboard[index].image = imgUrl;
+      currentStoryboard[index].imagePrompt = prompt;
+      renderStoryboard(currentStoryboard);
+      toast("图片生成成功");
+    }
+  } catch (e) {
+    toast("图片生成失败：" + e.message);
+  }
+}
+
+// 编辑分镜
+function editStoryboardItem(index) {
+  if (index < 0 || index >= currentStoryboard.length) return;
+
+  const item = currentStoryboard[index];
+  const newDesc = prompt("编辑分镜描述：", item.description);
+  if (newDesc !== null) {
+    currentStoryboard[index].description = newDesc;
+    renderStoryboard(currentStoryboard);
+    toast("已更新");
+  }
+}
+
+// 删除分镜
+function deleteStoryboardItem(index) {
+  if (index < 0 || index >= currentStoryboard.length) return;
+
+  if (!confirm(`确定要删除第${currentStoryboard[index].num}镜吗？`)) return;
+
+  currentStoryboard.splice(index, 1);
+  // 重新编号
+  currentStoryboard.forEach((item, i) => item.num = i + 1);
+  renderStoryboard(currentStoryboard);
+  toast("已删除");
+}
+
+// 导出分镜
+function exportStoryboard() {
+  if (!currentStoryboard || currentStoryboard.length === 0) {
+    toast("暂无分镜可导出");
+    return;
+  }
+
+  const data = {
+    title: currentDramaTitle || '未命名短剧',
+    createdAt: new Date().toISOString(),
+    scenes: currentStoryboard
+  };
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `分镜脚本_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("分镜已导出");
 }
 
 /* ================= 生成：图片 ================= */

@@ -29,6 +29,17 @@ env -u NODE_OPTIONS node server.js   # PORT 3000；NODE_OPTIONS 的 --use-system
 - git status 里的 .workbuddy/、index.html.bak 删除记录是迁移时排除所致，属预期
 
 ## 版本记录
+### v1.2.0 (2026-08-28)
+- 角色一致性系统：角色库管理、参考图上传、剧本生成时自动关联角色
+- localStorage 持久化角色数据（key: wb_aistudio_role_lib）
+
+### v1.1.0
+- 短剧工坊全面升级：8种题材、角色设定、剧本导出分享
+- 支持保存自定义剧本模板
+- 剧本生成增加性别/结局选项
+- 单集时长可选（1/3/5分钟）
+- 角色卡片自动展示
+
 ### v1.0.45
 - 修复 API Key 丢失导致渠道显示"未填"问题（从 gen 脚本恢复 cpk-jE3Qzzq...）
 
