@@ -329,11 +329,17 @@ function vidFrames(len) { return len === "18" ? 441 : len === "10" ? 241 : 121; 
 async function forwardVideoCreate(ch, body) {
   const key = channelKey(ch);
   const dims = vidDims(body.ratio);
-  const images = Array.isArray(body.images) ? body.images.filter(u => typeof u === "string" && /^https?:\/\//.test(u)).slice(0, 4) : [];
+  // 支持URL和base64图片
+  const rawImages = Array.isArray(body.images) ? body.images : [];
+  const images = rawImages.filter(u => typeof u === "string" && (u.startsWith("https://") || u.startsWith("http://") || u.startsWith("data:image"))).slice(0, 4);
   const payload = { model: ch.model, prompt: body.prompt, width: dims.width, height: dims.height, num_frames: vidFrames(body.len), frame_rate: 24 };
   if (images.length >= 2) {
     // 图生视频：multi_reference 至少 2 张，最后一张作为背景
     payload.mode = "multi_reference";
+    payload.image = images;
+  } else if (images.length === 1) {
+    // 单张参考图
+    payload.mode = "single_reference";
     payload.image = images;
   } else {
     payload.mode = "ti2vid";

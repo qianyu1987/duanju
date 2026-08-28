@@ -957,14 +957,11 @@ button:disabled{cursor:not-allowed;opacity:0.6}
           <div class="key-hint" style="margin-top:10px;font-size:12.5px;color:var(--muted)">视频采用异步生成：提交后约 2-4 分钟出片，页面会自动轮询进度。生成期间请保持本页面打开，可切换到其他工坊继续创作。</div>
 
           <div class="card-title" style="margin-top:16px;font-size:14px"><span class="dot" style="background:var(--orange)"></span>参考图（图生视频，可选）</div>
-          <div class="key-hint" style="font-size:12px;color:var(--muted);margin-bottom:8px">填写 2-4 张图片 URL（最后一张作为背景），AI 将参考图中的人物/场景生成视频。也可从「我的图片」直接选择。</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="refImgs">
-            <input id="refImg1" placeholder="参考图 1（必填，如选参考图）" style="font-size:13px">
-            <input id="refImg2" placeholder="参考图 2（必填）" style="font-size:13px">
-            <input id="refImg3" placeholder="参考图 3（可选）" style="font-size:13px">
-            <input id="refImg4" placeholder="参考图 4（可选）" style="font-size:13px">
-          </div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="pickRefImages()">+ 从我的图片选择</button>
+          <div class="key-hint" style="font-size:12px;color:var(--muted);margin-bottom:8px">上传 0-4 张图片作为参考（最后一张作为背景），AI 将根据参考图生成视频。不上传则使用纯文本生成。</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px" id="refImgPreview"></div>
+          <input type="file" id="refImgFile" accept="image/*" multiple style="display:none" onchange="handleRefImgUpload(event)">
+          <button class="btn btn-ghost btn-sm" onclick="$('#refImgFile').click()">+ 上传参考图</button>
+          <button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="pickRefImages()">+ 从我的图片选择</button>
           <div id="refPickGrid" class="hidden" style="margin-top:8px">
             <div class="img-grid" id="refPickList" style="grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;margin-top:0"></div>
           </div>
@@ -2118,6 +2115,43 @@ async function apiVideoCreate(prompt, ratio, len, images) {
   return d.taskId;
 }
 let refMineList = [];
+let refImgUrls = []; // 存储上传的参考图URL
+
+function handleRefImgUpload(event) {
+  const files = Array.from(event.target.files).slice(0, 4 - refImgUrls.length);
+  if (!files.length) { toast("最多上传4张参考图"); return; }
+  
+  let loaded = 0;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target.result;
+      refImgUrls.push(base64);
+      loaded++;
+      renderRefImgPreview();
+      if (loaded === files.length) toast("已添加 " + files.length + " 张参考图");
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = ''; // 重置input
+}
+
+function renderRefImgPreview() {
+  const container = $("#refImgPreview");
+  if (!container) return;
+  container.innerHTML = refImgUrls.map((url, i) => 
+    '<div style="position:relative;display:inline-block;margin:4px">' +
+    '<img src="' + url + '" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">' +
+    '<button onclick="removeRefImg(' + i + ')" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;border:none;cursor:pointer;font-size:12px;line-height:1">×</button>' +
+    '</div>'
+  ).join('');
+}
+
+function removeRefImg(index) {
+  refImgUrls.splice(index, 1);
+  renderRefImgPreview();
+}
+
 async function pickRefImages() {
   if (!guardLogin()) return;
   const grid = $("#refPickGrid"), list = $("#refPickList");
@@ -2139,12 +2173,11 @@ async function pickRefImages() {
 }
 function fillRef(i) {
   const p = refMineList[i];
-  if (!p) return;
+  if (!p || refImgUrls.length >= 4) return;
   const src = safeMediaUrl(p.result.url || p.result.b64);
-  for (let k = 1; k <= 4; k++) {
-    const el = $("#refImg" + k);
-    if (!el.value.trim()) { el.value = src; toast("已填入参考图 " + k); break; }
-  }
+  refImgUrls.push(src);
+  renderRefImgPreview();
+  toast("已添加参考图");
 }
 async function apiVideoPoll(taskId) {
   return await req("/proxy/video/" + encodeURIComponent(taskId));
@@ -2154,8 +2187,8 @@ async function genVideo() {
   const prompt = $("#vidPrompt").value.trim();
   if (!prompt) { toast("请输入视频画面描述"); return; }
   const ratio = $("#vidRatio").value, len = $("#vidLen").value;
-  const images = [1, 2, 3, 4].map(i => $("#refImg" + i).value.trim()).filter(u => /^https?:\/\//.test(u));
-  if (images.length === 1) { toast("参考图需 2-4 张（或清空全部使用纯文本生成）"); return; }
+  const images = refImgUrls.slice(0, 4);
+  // 参考图可选：不限制数量，直接提交
   setBusy("vidBtn", true, "提交中…");
   $("#vidResult").innerHTML = '<div class="loading-tip"><span class="spinner"></span>正在提交视频任务…</div>';
   try {
