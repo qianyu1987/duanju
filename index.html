@@ -762,6 +762,10 @@ button:disabled{cursor:not-allowed;opacity:0.6}
 .storyboard-img-placeholder{width:100%;max-width:320px;height:120px;border-radius:8px;background:linear-gradient(135deg,var(--bg) 0%,oklch(var(--bg) / 0.5) 100%);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:13px;margin-bottom:10px}
 .storyboard-actions{display:flex;gap:6px;flex-wrap:wrap}
 .storyboard-actions button{font-size:11px;padding:4px 10px}
+.storyboard-video-loading{display:inline-flex;align-items:center;gap:4px;color:var(--purple);font-size:11px}
+.storyboard-video-loading .spinner{width:10px;height:10px}
+.storyboard-video-url{margin-top:8px}
+.storyboard-video-url video{width:100%;max-width:320px;border-radius:8px;background:var(--bg)}
 .storyboard-loading{text-align:center;padding:20px;color:var(--sub)}
 .storyboard-progress{margin-top:12px;height:4px;background:var(--bg);border-radius:2px;overflow:hidden}
 .storyboard-progress-bar{height:100%;background:linear-gradient(90deg,var(--purple),var(--primary));border-radius:2px;transition:width .3s}
@@ -1142,8 +1146,9 @@ details[open] summary{margin-bottom:8px}
           <div class="storyboard-section" id="storyboardSection" style="display:none">
             <div class="storyboard-header">
               <h3><span class="dot" style="background:var(--purple)"></span>分镜脚本</h3>
-              <div style="display:flex;gap:8px">
-                <button class="btn btn-ghost btn-sm" onclick="autoGenerateStoryboard()" id="storyboardGenBtn" ${isGenerating ? 'disabled' : ''}>🎬 AI生成分镜</button>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-ghost btn-sm" onclick="autoGenerateStoryboard()" id="storyboardGenBtn">🎬 AI生成分镜</button>
+                <button class="btn btn-primary btn-sm" onclick="generateAllVideos()" id="genAllVidBtn">🚀 批量生成视频</button>
                 <button class="btn btn-ghost btn-sm" onclick="exportStoryboard()" ${!currentStoryboard || currentStoryboard.length === 0 ? 'disabled' : ''}>📤 导出分镜</button>
               </div>
             </div>
@@ -2677,8 +2682,15 @@ function renderStoryboard(items) {
         `<img src="${esc(safeMediaUrl(item.image))}" class="storyboard-img" alt="分镜图${item.num}">` :
         `<div class="storyboard-img-placeholder">🎬 点击生成图片</div>`
       }
+      ${item.videoUrl ?
+        `<div class="storyboard-video-url"><video src="${esc(item.videoUrl)}" controls playsinline></video></div>` :
+        item.videoStatus === 'pending' ?
+        `<div class="storyboard-video-loading" style="text-align:center;padding:10px"><span class="spinner"></span>视频生成中...</div>` :
+        ''
+      }
       <div class="storyboard-actions">
         <button class="btn btn-primary btn-sm" onclick="generateStoryboardImage(${index})">🎨 生成图片</button>
+        <button class="btn btn-ghost btn-sm" onclick="generateStoryboardVideo(${index})" id="vidBtn-${index}" ${item.videoStatus === 'pending' ? 'disabled' : ''}>${item.videoUrl ? '🎬 重新生成' : item.videoStatus === 'pending' ? '⏳ 生成中...' : '🎬 生成视频'}</button>
         <button class="btn btn-ghost btn-sm" onclick="editStoryboardItem(${index})">✏️ 编辑</button>
         <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteStoryboardItem(${index})">🗑️ 删除</button>
       </div>
@@ -2815,6 +2827,106 @@ async function generateStoryboardImage(index) {
   }
 }
 
+// 生成单个分镜视频（v1.4）
+async function generateStoryboardVideo(index) {
+  if (index < 0 || index >= currentStoryboard.length) return;
+  if (!guardLogin()) return;
+
+  const item = currentStoryboard[index];
+  const btn = $(`#vidBtn-${index}`);
+
+  if (!item.image) {
+    toast("请先生成参考图片");
+    return;
+  }
+
+  if (isGenerating) {
+    toast("正在生成中，请稍候...");
+    return;
+  }
+
+  isGenerating = true;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="storyboard-video-loading"><span class="spinner"></span>生成中...</span>';
+  }
+
+  try {
+    toast(`正在生成第${item.num}镜视频...`);
+
+    // 构建视频提示词
+    const videoPrompt = `${item.description}, ${item.camera} shot, ${item.angle}, cinematic lighting, short drama style, vertical video, high quality`;
+
+    // 提交视频生成任务
+    const taskId = await apiVideoCreate(videoPrompt, "9:16", "5", [item.image]);
+
+    // 保存视频任务
+    item.videoTaskId = taskId;
+    item.videoStatus = "pending";
+    renderStoryboard(currentStoryboard);
+
+    toast(`视频任务已提交，正在生成中...`);
+
+    // 轮询检查状态
+    await pollStoryboardVideo(index, taskId);
+
+  } catch (e) {
+    toast("视频生成失败：" + e.message);
+    console.error("视频生成错误:", e);
+  } finally {
+    isGenerating = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "🎬 生成视频";
+    }
+  }
+}
+
+// 轮询分镜视频状态
+async function pollStoryboardVideo(index, taskId) {
+  if (index < 0 || index >= currentStoryboard.length) return;
+
+  const maxAttempts = 60; // 最多轮询60次（5分钟）
+  const pollInterval = 5000; // 每5秒轮询一次
+
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      const result = await req("/proxy/video/" + encodeURIComponent(taskId));
+
+      if (result.status === "done" || result.status === "completed") {
+        // 视频生成完成
+        const videoUrl = result.videoUrl || result.url || result.data?.url;
+        if (videoUrl) {
+          currentStoryboard[index].videoUrl = videoUrl;
+          currentStoryboard[index].videoStatus = "done";
+          renderStoryboard(currentStoryboard);
+          toast(`第${currentStoryboard[index].num}镜视频生成完成`);
+          return;
+        }
+      } else if (result.status === "failed" || result.status === "error") {
+        toast(`第${currentStoryboard[index].num}镜视频生成失败`);
+        currentStoryboard[index].videoStatus = "failed";
+        renderStoryboard(currentStoryboard);
+        return;
+      }
+
+      // 更新进度显示
+      const btn = $(`#vidBtn-${index}`);
+      if (btn) {
+        const progress = Math.min(100, Math.round((i / maxAttempts) * 100));
+        btn.innerHTML = `<span class="storyboard-video-loading"><span class="spinner"></span>${progress}%</span>`;
+      }
+
+      await new Promise(r => setTimeout(r, pollInterval));
+    } catch (e) {
+      console.error("轮询失败:", e);
+      await new Promise(r => setTimeout(r, pollInterval));
+    }
+  }
+
+  toast(`第${currentStoryboard[index]?.num || '未知'}镜视频生成超时，请稍后重试`);
+}
+
 // 编辑分镜
 function editStoryboardItem(index) {
   if (index < 0 || index >= currentStoryboard.length) return;
@@ -2861,6 +2973,94 @@ function exportStoryboard() {
   a.click();
   URL.revokeObjectURL(a.href);
   toast("分镜已导出");
+}
+
+// 批量生成分镜视频（v1.4）
+let isBatchGenerating = false;
+async function generateAllVideos() {
+  if (isBatchGenerating) {
+    toast("正在批量生成中，请稍候...");
+    return;
+  }
+  if (!currentStoryboard || currentStoryboard.length === 0) {
+    toast("暂无分镜，请先生成分镜");
+    return;
+  }
+
+  const btn = $("#genAllVidBtn");
+  const progress = $("#storyboardProgress");
+  const progressBar = $("#storyboardProgressBar");
+  const progressText = $("#storyboardProgressText");
+
+  if (!btn || !progress) return;
+
+  isBatchGenerating = true;
+  btn.disabled = true;
+  btn.textContent = "生成中...";
+  progress.style.display = 'block';
+
+  let completed = 0;
+  let failed = 0;
+  const total = currentStoryboard.length;
+
+  for (let i = 0; i < total; i++) {
+    const item = currentStoryboard[i];
+
+    // 更新进度
+    if (progressBar) {
+      const pct = Math.round((i / total) * 100);
+      progressBar.style.width = pct + '%';
+    }
+    if (progressText) {
+      progressText.textContent = `正在生成第 ${i + 1}/${total} 镜...`;
+    }
+
+    // 跳过已有视频的
+    if (item.videoUrl) {
+      completed++;
+      continue;
+    }
+
+    // 跳过没有图片的
+    if (!item.image) {
+      toast(`第${item.num}镜没有参考图，请先生成图片`);
+      continue;
+    }
+
+    try {
+      const videoPrompt = `${item.description}, ${item.camera} shot, ${item.angle}, cinematic lighting, short drama style, vertical video, high quality`;
+      const taskId = await apiVideoCreate(videoPrompt, "9:16", "5", [item.image]);
+      item.videoTaskId = taskId;
+      item.videoStatus = "pending";
+      renderStoryboard(currentStoryboard);
+
+      // 等待视频生成完成
+      await pollStoryboardVideo(i, taskId);
+
+      completed++;
+    } catch (e) {
+      console.error(`第${item.num}镜视频生成失败:`, e);
+      item.videoStatus = "failed";
+      failed++;
+      toast(`第${item.num}镜生成失败，继续下一镜...`);
+    }
+  }
+
+  // 更新最终进度
+  if (progressBar) progressBar.style.width = '100%';
+  if (progressText) {
+    progressText.textContent = `生成完成！成功: ${completed}, 失败: ${failed}`;
+  }
+
+  isBatchGenerating = false;
+  btn.disabled = false;
+  btn.textContent = "🚀 批量生成视频";
+  toast(`批量生成完成！成功: ${completed}, 失败: ${failed}`);
+
+  // 3秒后隐藏进度条
+  setTimeout(() => {
+    if (progress) progress.style.display = 'none';
+  }, 3000);
 }
 
 /* ================= 生成：图片 ================= */
