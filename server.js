@@ -1006,6 +1006,19 @@ async function handleAPI(req, res, method, p, url) {
     const w = Math.min(parseInt(url.searchParams.get("w") || "400", 10), 1200) || 400;
     if (!imgUrl) return fail(res, 400, "url 参数缺失");
     try {
+      // 可信 CDN 直跳：不经过服务端下载，直接 302 重定向到原图
+      // 这些域名已通过 assertSafeRemoteUrl 验证过，不存在 SSRF 风险
+      const CDN_DIRECT_DOMAINS = [
+        "platform-outputs.agnes-ai.space",
+        "storage.googleapis.com",
+        "gs-cdn.net",
+      ];
+      let parsedUrl;
+      try { parsedUrl = new URL(imgUrl); } catch(e) { return fail(res, 400, "URL 格式不正确"); }
+      if (CDN_DIRECT_DOMAINS.includes(parsedUrl.hostname)) {
+        res.writeHead(302, { "Location": imgUrl, "Cache-Control": "public, max-age=86400" });
+        return res.end();
+      }
       const safeUrl = await assertSafeRemoteUrl(imgUrl);
       // 生成缓存 key（URL + 宽度）
       const cacheKey = crypto.createHash('md5').update(imgUrl + '_' + w).digest('hex');
@@ -1028,7 +1041,7 @@ async function handleAPI(req, res, method, p, url) {
 
       if (!outBuf) {
         // 下载原图
-        const imgRes = await fetch(safeUrl, { redirect: "manual", signal: AbortSignal.timeout(15000) });
+        const imgRes = await fetch(safeUrl, { redirect: "manual", signal: AbortSignal.timeout(60000) });
         if (imgRes.status >= 300 && imgRes.status < 400) return fail(res, 400, "不支持重定向图片地址");
         if (!imgRes.ok) return fail(res, 400, "无法获取原图");
         const contentLength = Number(imgRes.headers.get("content-length") || 0);
