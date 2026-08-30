@@ -9,6 +9,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const dns = require("dns").promises;
+const { execFile } = require("child_process");
 let sharp;
 try { sharp = require("sharp"); } catch (e) { sharp = null; }
 
@@ -397,7 +398,27 @@ function addPost(user, body) {
   };
   posts.push(post);
   saveJSON("posts.json", posts);
+
+  // 更新 usage.json
+  updateUsage(body.type);
+
   return post;
+}
+
+function updateUsage(type) {
+  const today = localDate();
+  const usage = loadJSON("usage.json", {});
+  if (!usage[today]) {
+    usage[today] = { text: 0, image: 0, video: 0 };
+  }
+  if (type === "text" || type === "drama") {
+    usage[today].text = (usage[today].text || 0) + 1;
+  } else if (type === "image") {
+    usage[today].image = (usage[today].image || 0) + 1;
+  } else if (type === "video") {
+    usage[today].video = (usage[today].video || 0) + 1;
+  }
+  saveJSON("usage.json", usage);
 }
 function computeStats() {
   const posts = loadJSON("posts.json", []);
@@ -1015,7 +1036,11 @@ async function handleAPI(req, res, method, p, url) {
       ];
       let parsedUrl;
       try { parsedUrl = new URL(imgUrl); } catch(e) { return fail(res, 400, "URL 格式不正确"); }
-      if (CDN_DIRECT_DOMAINS.includes(parsedUrl.hostname)) {
+
+      // 优化：来自前端的请求（有 Referer）使用服务端压缩，浏览器可直接缓存
+      // 只有直接访问 URL 时才走 302 直跳
+      const isFrontendRequest = req.headers.referer && req.headers.referer.includes("duanju.hhtc.top");
+      if (CDN_DIRECT_DOMAINS.includes(parsedUrl.hostname) && !isFrontendRequest) {
         res.writeHead(302, { "Location": imgUrl, "Cache-Control": "public, max-age=86400" });
         return res.end();
       }
@@ -1081,6 +1106,80 @@ async function handleAPI(req, res, method, p, url) {
     }
   }
 
+  /* ---- TTS 配音（需登录） ---- */
+  if (p === "/api/tts" && method === "POST") {
+    const u = requireUser(req, res); if (!u) return;
+    const b = await readBody(req);
+    const text = String(b.text || "").trim();
+    const voice = String(b.voice || "zh-CN-XiaoxiaoNeural");
+    if (!text) return fail(res, 400, "文本不能为空");
+    if (text.length > 500) return fail(res, 400, "文本过长（最多 500 字）");
+
+    const cfg = getConfig();
+    const ttsApiKey = process.env.TTS_API_KEY || cfg.ttsApiKey || "";
+    const ttsRegion = process.env.TTS_REGION || cfg.ttsRegion || "eastasia";
+
+    // 双引擎：配置了 Azure Key 走 Azure；否则走服务器自带的 edge-tts（免费、无需 Key）。
+    // audioDir / fileName 必须在 try 之外声明，否则 catch 里访问不到（曾导致 ReferenceError）。
+    const audioDir = path.join(DATA_DIR, "audio");
+    const fileName = `tts_${u.id}_${Date.now()}.mp3`;
+    const outFile = path.join(audioDir, fileName);
+    const engine = ttsApiKey ? "azure" : "edge";
+
+    try {
+      ensureDataDir();
+      fs.mkdirSync(audioDir, { recursive: true });
+
+      if (ttsApiKey) {
+        // === 方案 A：微软 Azure 语音服务 ===
+        const tokenRes = await fetch(`https://${ttsRegion}.api.cognitive.microsoft.com/sts/v1.0/issuetoken`, {
+          method: "POST",
+          headers: { "Ocp-Apim-Subscription-Key": ttsApiKey, "Content-Length": "0" }
+        });
+        if (!tokenRes.ok) throw new Error("获取语音令牌失败(" + tokenRes.status + ")，请检查 ttsApiKey / ttsRegion");
+        const token = await tokenRes.text();
+
+        const safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${voice.startsWith("zh") ? "zh-CN" : "en-US"}"><voice name="${voice}">${safeText}</voice></speak>`;
+
+        const ttsRes = await fetch(`https://${ttsRegion}.tts.speech.microsoft.com/cognitiveservices/v1`, {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/ssml+xml",
+            "X-Microsoft-OutputFormat": "audio-24khz-48kbitrate-mono-mp3",
+            "User-Agent": "duanju-tts"
+          },
+          body: ssml
+        });
+        if (!ttsRes.ok) throw new Error("语音合成失败(" + ttsRes.status + ")");
+
+        const buf = Buffer.from(await ttsRes.arrayBuffer());
+        if (!buf.length) throw new Error("语音服务返回空音频");
+        fs.writeFileSync(outFile, buf);
+      } else {
+        // === 方案 B：Edge TTS（免费，服务器已装 python3 + edge-tts 7.2.8）===
+        await new Promise((resolve, reject) => {
+          execFile("python3", ["-m", "edge_tts", "--voice", voice, "--text", text, "--write-media", outFile],
+            { timeout: 60000, maxBuffer: 1 << 20 },
+            (err, stdout, stderr) => {
+              if (err) return reject(new Error(String(stderr || err.message).slice(0, 300)));
+              resolve();
+            });
+        });
+      }
+
+      // 校验产物：绝不返回空文件冒充成功（用户会以为配音好了，实际播放无声）
+      const outStat = fs.statSync(outFile);
+      if (!outStat.size) throw new Error("生成的音频为空");
+
+      return ok(res, { audioUrl: `/data/audio/${fileName}`, size: outStat.size, engine });
+    } catch (e) {
+      console.error("[tts] 生成失败:", e && e.message);
+      return fail(res, 500, "配音生成失败：" + (e && e.message ? e.message : "unknown"));
+    }
+  }
+
   return fail(res, 404, "接口不存在");
 }
 
@@ -1088,7 +1187,7 @@ async function handleAPI(req, res, method, p, url) {
 function serveStatic(res, p, method) {
   let rel = p === "/" ? "/index.html" : p;
   // 允许访问缓存图片，但拒绝其他敏感数据路径
-  if (rel.startsWith("/data/") && !rel.startsWith("/data/cache/")) return fail(res, 403, "禁止访问");
+  if (rel.startsWith("/data/") && !rel.startsWith("/data/cache/") && !rel.startsWith("/data/audio/")) return fail(res, 403, "禁止访问");
   if (["/server.js", "/package.json", "/plan", "/.git"].some(d => rel === d || rel.startsWith(d))) return fail(res, 403, "禁止访问");
   const full = path.join(ROOT, rel);
   if (!full.startsWith(ROOT)) return fail(res, 403, "禁止访问");
@@ -1099,7 +1198,8 @@ function serveStatic(res, p, method) {
       ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
       ".css": "text/css; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg",
       ".jpeg": "image/jpeg", ".svg": "image/svg+xml", ".json": "application/json; charset=utf-8",
-      ".ico": "image/x-icon", ".webp": "image/webp", ".mp4": "video/mp4"
+      ".ico": "image/x-icon", ".webp": "image/webp", ".mp4": "video/mp4",
+      ".mp3": "audio/mpeg", ".wav": "audio/wav", ".ogg": "audio/ogg"
     };
     // ETag 基于 mtime+size：文件未变时浏览器走 304 缓存，不再重复下载
     const etag = '"' + st.size.toString(16) + '-' + st.mtimeMs.toString(16) + '"';
