@@ -7,54 +7,119 @@
 <title>管理后台 · AI 创作台</title>
 <style>
 :root{
-  --bg:#f4f5fb; --card:#fff; --line:#e7e9f2; --text:#1e2433; --sub:#6b7280; --muted:#9aa1b2;
-  --primary:#7c5cff; --primary2:#9b6bff; --primary-soft:#efeaff;
-  --blue:#3b82f6; --blue-soft:#eaf2ff; --purple:#8b5cf6; --purple-soft:#f3ecff;
-  --pink:#ec4899; --pink-soft:#fdeef6; --orange:#f97316; --orange-soft:#fff1e6;
-  --green:#16a34a; --green-soft:#e9f9ef; --red:#ef4444; --red-soft:#fdecec; --amber:#f59e0b;
-  --radius:16px; --shadow:0 1px 2px rgba(30,36,51,.04),0 8px 24px rgba(30,36,51,.06);
+  /* ===== OKLCH 感知均匀色彩系统（与前台 index.html 统一品牌语言） ===== */
+  --bg:#f8f9fc; --card:#ffffff; --line:#e8eaf0; --text:#0f172a; --sub:#475569; --muted:#94a3b8;
+  --primary:oklch(58% 0.18 275); --primary2:oklch(65% 0.15 285); --primary-soft:oklch(92% 0.04 275);
+  --blue:oklch(55% 0.16 250); --blue-soft:oklch(92% 0.04 250);
+  --purple:oklch(55% 0.17 310); --purple-soft:oklch(92% 0.04 310);
+  --pink:oklch(60% 0.18 340); --pink-soft:oklch(93% 0.04 340);
+  --orange:oklch(65% 0.16 40); --orange-soft:oklch(94% 0.04 40);
+  --green:oklch(55% 0.14 150); --green-soft:oklch(93% 0.04 150);
+  --red:oklch(55% 0.16 25); --red-soft:oklch(93% 0.04 25);
+  --amber:oklch(65% 0.16 80); --amber-soft:oklch(94% 0.04 80);
+
+  /* ===== 4pt 间距系统 ===== */
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-8:32px;
+
+  /* ===== 圆角系统 ===== */
+  --radius-sm:8px; --radius:14px; --radius-lg:18px; --radius-xl:24px; --radius-full:999px;
+
+  /* ===== 双层阴影（近距定型 + 远距氛围） ===== */
+  --shadow-xs: 0 1px 2px oklch(0.15 0 0 / 0.04), 0 1px 3px oklch(0.15 0 0 / 0.08);
+  --shadow-sm: 0 1px 3px oklch(0.15 0 0 / 0.06), 0 4px 12px oklch(0.15 0 0 / 0.08);
+  --shadow: 0 2px 4px oklch(0.15 0 0 / 0.06), 0 8px 24px oklch(0.15 0 0 / 0.1);
+  --shadow-md: 0 4px 8px oklch(0.15 0 0 / 0.08), 0 12px 32px oklch(0.15 0 0 / 0.12);
+  --shadow-lg: 0 8px 16px oklch(0.15 0 0 / 0.1), 0 20px 48px oklch(0.15 0 0 / 0.15);
+
+  /* ===== 缓动 ===== */
+  --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;min-height:100vh}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}
+/* 背景氛围光：两枚超大柔和色斑，极低透明度，不干扰内容可读性 */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(900px 500px at 8% -8%, oklch(92% 0.06 275 / .5), transparent 60%),radial-gradient(760px 460px at 100% 0%, oklch(93% 0.05 310 / .45), transparent 62%)}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
-input{font-family:inherit;font-size:16px;color:var(--text);background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%;outline:none}
-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(124,92,255,.13)}
+input{font-family:inherit;font-size:16px;color:var(--text);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px 14px;width:100%;outline:none;transition:border-color .18s var(--ease-out),box-shadow .18s var(--ease-out)}
+select,textarea{font-family:inherit;font-size:15px;color:var(--text);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px 14px;width:100%;outline:none;transition:border-color .18s var(--ease-out),box-shadow .18s var(--ease-out)}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px oklch(var(--primary) / .14)}
+label{display:block;font-size:13px;color:var(--sub);font-weight:600;margin-bottom:6px}
 .hidden{display:none!important}
 
-/* 顶栏 */
-.topbar{background:#fff;border-bottom:1px solid var(--line);padding:0 22px;display:flex;align-items:center;gap:14px;height:60px;position:sticky;top:0;z-index:40}
-.topbar .logo-ic{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--primary2));display:flex;align-items:center;justify-content:center}
-.topbar b{font-size:16px}
-.topbar .t-right{margin-left:auto;display:flex;align-items:center;gap:10px}
-.badge{display:inline-flex;align-items:center;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px}
+/* ===== 顶栏（毛玻璃） ===== */
+.topbar{background:rgba(255,255,255,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:0 22px;display:flex;align-items:center;gap:12px;height:60px;position:sticky;top:0;z-index:40}
+.topbar .logo-ic{width:36px;height:36px;border-radius:11px;flex-shrink:0;background:linear-gradient(135deg,var(--primary),oklch(62% 0.16 300));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px oklch(var(--primary) / .32)}
+.topbar b{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.topbar .t-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+#who{font-size:13px;color:var(--sub);padding:5px 11px;background:oklch(96% 0.015 275);border-radius:var(--radius-full);font-weight:600}
+.badge{display:inline-flex;align-items:center;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:var(--radius-full)}
 .b-ok{background:var(--green-soft);color:var(--green)}
 
-/* 布局 */
-.wrap{max-width:1080px;margin:0 auto;padding:22px}
+/* ===== 布局：侧边栏 + 主区 ===== */
+.admin-shell{display:flex;align-items:flex-start;min-height:calc(100vh - 60px)}
+.admin-side{width:212px;flex-shrink:0;position:sticky;top:60px;height:calc(100vh - 60px);padding:var(--space-5) var(--space-4);background:linear-gradient(180deg,#fff 0%, oklch(98.5% 0.008 275) 100%);border-right:1px solid var(--line);overflow-y:auto}
+.admin-main{flex:1;min-width:0;padding:var(--space-6) var(--space-6) 64px;max-width:1180px}
+/* 主区切换淡入 */
+.admin-main>div:not(.hidden){animation:viewIn .3s var(--ease-out)}
+@keyframes viewIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ===== 导航（.nav-tabs 为共用钩子，此处按容器分流） ===== */
 .nav-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
-.nav-tab{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 18px;font-size:14.5px;font-weight:600;color:var(--sub);min-height:42px}
-.nav-tab:hover{border-color:var(--primary);color:var(--primary)}
-.nav-tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
-.card-title{font-size:15.5px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.card-title .dot{width:8px;height:8px;border-radius:50%}
+/* 侧边栏：纵向 */
+.admin-side .nav-tabs{flex-direction:column;gap:4px;margin-bottom:0}
+.admin-side .nav-tab{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid transparent;background:transparent;border-radius:12px;padding:11px 13px;font-size:14.5px;font-weight:600;color:var(--sub);min-height:44px;position:relative;transition:background .2s var(--ease-out),color .2s var(--ease-out),transform .2s var(--ease-out),box-shadow .2s var(--ease-out)}
+.admin-side .nav-tab svg{flex-shrink:0;opacity:.85}
+.admin-side .nav-tab:hover{background:oklch(96% 0.02 275);color:var(--text);transform:translateX(2px)}
+.admin-side .nav-tab.active{background:linear-gradient(135deg,var(--primary),oklch(62% 0.16 292));border-color:transparent;color:#fff;box-shadow:0 4px 14px oklch(var(--primary) / .3)}
+.admin-side .nav-tab.active svg{opacity:1}
+.admin-side .nav-tab.active::before{content:"";position:absolute;left:-16px;top:50%;transform:translateY(-50%);width:3px;height:22px;border-radius:0 3px 3px 0;background:linear-gradient(180deg,var(--primary),oklch(66% 0.15 300))}
+/* 内容区筛选：横向 chip */
+#postFilter{margin-bottom:16px}
+#postFilter .nav-tab{border:1px solid var(--line);background:#fff;border-radius:var(--radius-full);padding:8px 16px;font-size:13.5px;font-weight:600;color:var(--sub);min-height:38px;transition:all .2s var(--ease-out)}
+#postFilter .nav-tab:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-soft)}
+#postFilter .nav-tab.active{background:linear-gradient(135deg,var(--primary),oklch(62% 0.16 292));border-color:transparent;color:#fff;box-shadow:0 3px 10px oklch(var(--primary) / .26)}
 
-/* 统计卡 */
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
-.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
-.stat .num{font-size:26px;font-weight:800;line-height:1.2}
-.stat .lbl{font-size:12.5px;color:var(--sub);margin-top:3px}
+/* ===== 卡片 ===== */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:20px;margin-bottom:16px;transition:box-shadow .25s var(--ease-out)}
+.card:hover{box-shadow:var(--shadow)}
+.card-title{font-size:15.5px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:9px;padding-bottom:12px;border-bottom:1px solid oklch(96% 0.008 275)}
+.card-title .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 
-/* 表格 */
+/* ===== 统计卡（图标 + hover 顶部渐变条） ===== */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin-bottom:16px}
+.stat{position:relative;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);overflow:hidden;transition:transform .25s var(--ease-out),box-shadow .25s var(--ease-out),border-color .25s var(--ease-out)}
+.stat::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--purple),var(--pink));transform:scaleX(0);transform-origin:left;transition:transform .32s var(--ease-out)}
+.stat:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:oklch(90% 0.02 275)}
+.stat:hover::before{transform:scaleX(1)}
+.stat .stat-ic{width:36px;height:36px;border-radius:11px;margin-bottom:10px;display:flex;align-items:center;justify-content:center;background:var(--primary-soft);color:var(--primary)}
+.stat .num{font-size:26px;font-weight:800;line-height:1.15;letter-spacing:-.02em}
+.stat .lbl{font-size:12.5px;color:var(--sub);margin-top:3px;font-weight:500}
+/* 颜色变体：仅换图标配色，数字色由内联 style 控制，保持向后兼容 */
+.stat.c-blue .stat-ic{background:var(--blue-soft);color:var(--blue)}
+.stat.c-green .stat-ic{background:var(--green-soft);color:var(--green)}
+.stat.c-red .stat-ic{background:var(--red-soft);color:var(--red)}
+.stat.c-amber .stat-ic{background:var(--amber-soft);color:var(--amber)}
+.stat.c-purple .stat-ic{background:var(--purple-soft);color:var(--purple)}
+.stat.c-orange .stat-ic{background:var(--orange-soft);color:var(--orange)}
+.stat.c-pink .stat-ic{background:var(--pink-soft);color:var(--pink)}
+
+/* ===== 表格 ===== */
+.tbl-wrap{border:1px solid var(--line);border-radius:var(--radius);overflow-x:auto;background:#fff;box-shadow:var(--shadow-xs)}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
-th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
-th{font-size:12px;color:var(--sub);font-weight:700;background:#fafbff}
+th{text-align:left;font-size:11.5px;color:var(--sub);font-weight:700;background:oklch(97% 0.012 275);padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap;letter-spacing:.03em}
+td{text-align:left;padding:11px 14px;border-bottom:1px solid oklch(96% 0.006 275)}
+tbody tr{transition:background .15s var(--ease-out)}
+tbody tr:hover{background:oklch(97.5% 0.012 275)}
 tr:last-child td{border-bottom:none}
-.tbl-wrap{overflow-x:auto}
+/* 表格内空状态 */
+.hist-empty{text-align:center;color:var(--muted);padding:36px 20px;font-size:14px}
+.hist-empty::before{content:"📭";display:block;font-size:30px;margin-bottom:8px;opacity:.65}
 
-/* 内容列表 */
-.post-item{display:flex;gap:14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:10px;box-shadow:var(--shadow)}
-.post-item .p-thumb{width:86px;height:86px;border-radius:10px;background:#f0f1f6;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+/* ===== 内容列表 ===== */
+.post-item{display:flex;gap:14px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:13px 15px;margin-bottom:10px;box-shadow:var(--shadow-xs);transition:box-shadow .22s var(--ease-out),transform .22s var(--ease-out),border-color .22s var(--ease-out)}
+.post-item:hover{box-shadow:var(--shadow);transform:translateY(-2px);border-color:oklch(90% 0.02 275)}
+.post-item .p-thumb{width:86px;height:86px;border-radius:11px;background:linear-gradient(135deg,oklch(96% 0.01 275),oklch(94% 0.015 275));flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .post-item .p-thumb img,.post-item .p-thumb video{width:100%;height:100%;object-fit:cover}
 .post-item .p-thumb .p-txt{font-size:11px;color:var(--muted);padding:6px;text-align:center}
 .post-item .p-main{flex:1;min-width:0}
@@ -62,47 +127,74 @@ tr:last-child td{border-bottom:none}
 .post-item .p-prompt{font-size:13.5px;color:var(--sub);margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
 .post-item .p-ops{align-self:center;flex-shrink:0}
 
-/* 按钮 */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:600;border-radius:11px;padding:10px 16px;min-height:42px;border:1px solid transparent}
-.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff}
+/* ===== 按钮 ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:600;border-radius:11px;padding:10px 16px;min-height:42px;border:1px solid transparent;transition:transform .18s var(--ease-out),box-shadow .18s var(--ease-out),background .18s var(--ease-out),border-color .18s var(--ease-out)}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;box-shadow:0 2px 8px oklch(var(--primary) / .25)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px oklch(var(--primary) / .34)}
 .btn-ghost{background:#fff;border-color:var(--line);color:var(--text)}
-.btn-ghost:hover{background:#f6f7fb}
+.btn-ghost:hover{background:oklch(97% 0.012 275);border-color:oklch(88% 0.02 275)}
 .btn-danger{background:var(--red-soft);color:var(--red)}
-.btn-sm{min-height:32px;padding:5px 11px;font-size:12.5px;border-radius:9px}
-.btn-icon{min-height:32px;padding:5px 9px;font-size:12.5px;border-radius:9px;color:var(--sub)}
-.btn-icon:hover{background:#f3f4fa;color:var(--text)}
+.btn-danger:hover{background:oklch(90% 0.05 25);transform:translateY(-1px)}
+.btn-sm{min-height:34px;padding:6px 12px;font-size:12.5px;border-radius:10px}
+.btn-icon{min-height:34px;padding:6px 10px;font-size:12.5px;border-radius:10px;color:var(--sub)}
+.btn-icon:hover{background:oklch(96% 0.012 275);color:var(--text)}
 .btn.block{width:100%}
 
-/* 登录 */
-.login-mask{position:fixed;inset:0;z-index:100;background:linear-gradient(150deg,#f4f5fb,#eae6ff);display:flex;align-items:center;justify-content:center;padding:20px}
-.login-card{background:#fff;border-radius:22px;box-shadow:0 20px 60px rgba(80,60,180,.15);width:100%;max-width:360px;padding:34px 30px}
-.login-card h1{font-size:19px;text-align:center;margin-bottom:6px}
+/* ===== 登录（去掉重复的 .hist-empty，其在表格区统一定义） ===== */
+.login-mask{position:fixed;inset:0;z-index:100;background:linear-gradient(150deg, oklch(96% 0.03 275), oklch(94% 0.045 305));display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:#fff;border-radius:24px;box-shadow:0 20px 60px oklch(0.45 0.15 275 / .18);width:100%;max-width:376px;padding:36px 32px;animation:cardIn .4s var(--ease-out)}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+.login-card h1{font-size:20px;text-align:center;margin-bottom:6px;font-weight:800;letter-spacing:-.01em}
 .login-card .sub{text-align:center;font-size:13px;color:var(--muted);margin-bottom:24px}
 .login-card .field{margin-bottom:14px}
 .login-card label{display:block;font-size:13px;color:var(--sub);font-weight:600;margin-bottom:6px}
 
-/* 趋势图 */
-.trend-wrap{display:flex;align-items:flex-end;gap:4px;height:130px;padding:6px 2px 0}
-.trend-bar{flex:1;background:linear-gradient(180deg,var(--primary),var(--primary2));border-radius:4px 4px 0 0;min-height:2px;position:relative;transition:opacity .2s}
-.trend-bar:hover{opacity:.75}
-.trend-bar .tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(-4px);background:#1e2433;color:#fff;font-size:10.5px;padding:3px 7px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;z-index:5}
+/* ===== 趋势图 ===== */
+.trend-wrap{display:flex;align-items:flex-end;gap:3px;height:140px;padding:8px 2px 0}
+.trend-bar{flex:1;min-height:3px;border-radius:5px 5px 0 0;position:relative;background:linear-gradient(180deg,var(--primary),oklch(72% 0.13 290));transition:transform .2s var(--ease-out),filter .2s var(--ease-out);transform-origin:bottom}
+.trend-bar:hover{transform:scaleY(1.05);filter:brightness(1.12)}
+.trend-bar .tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(-6px);background:oklch(25% 0.02 275);color:#fff;font-size:10.5px;padding:4px 8px;border-radius:7px;white-space:nowrap;opacity:0;pointer-events:none;z-index:5;box-shadow:0 4px 12px oklch(0.2 0 0 / .2)}
 .trend-bar:hover .tip{opacity:1}
-.trend-labels{display:flex;gap:4px;margin-top:4px}
+.trend-labels{display:flex;gap:3px;margin-top:6px}
 .trend-labels span{flex:1;font-size:10px;color:var(--muted);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* 模态 */
-.modal-mask{position:fixed;inset:0;background:rgba(20,24,40,.5);z-index:90;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s}
+/* ===== 模态 ===== */
+.modal-mask{position:fixed;inset:0;background:oklch(0.2 0.02 275 / .45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:90;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .22s var(--ease-out)}
 .modal-mask.show{opacity:1;pointer-events:auto}
-.modal{background:#fff;border-radius:18px;max-width:400px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(20,24,40,.2)}
-.modal b{font-size:16.5px;display:block;margin-bottom:8px}
+.modal{background:#fff;border-radius:20px;max-width:400px;width:100%;padding:24px;box-shadow:0 24px 64px oklch(0.25 0.02 275 / .28);transform:scale(.96);transition:transform .22s var(--ease-spring)}
+.modal-mask.show .modal{transform:scale(1)}
+.modal b{font-size:16.5px;display:block;margin-bottom:8px;font-weight:700}
 .modal p{font-size:14px;color:var(--sub);margin-bottom:20px;word-break:break-word}
 .modal .m-ops{display:flex;gap:10px;justify-content:flex-end}
-#toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);background:#1e2433;color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;z-index:120;opacity:0;pointer-events:none;transition:all .25s;max-width:88vw;text-align:center}
+
+/* ===== Toast ===== */
+#toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);background:oklch(26% 0.02 275);color:#fff;padding:12px 20px;border-radius:13px;font-size:14px;font-weight:500;z-index:120;opacity:0;pointer-events:none;transition:all .26s var(--ease-out);max-width:88vw;text-align:center;box-shadow:0 8px 28px oklch(0.2 0 0 / .28)}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.hist-empty{text-align:center;color:var(--muted);padding:30px 0;font-size:14px}
+
+/* ===== 响应式 ===== */
+/* ≤900px：侧边栏转为顶部横向滚动导航 */
+@media (max-width:900px){
+  .admin-shell{flex-direction:column}
+  .admin-side{width:100%;position:sticky;top:60px;height:auto;z-index:30;border-right:none;border-bottom:1px solid var(--line);padding:10px 12px;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .admin-side .nav-tabs{flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+  .admin-side .nav-tab{width:auto;flex-shrink:0;min-height:38px;padding:8px 14px;font-size:13.5px;border:1px solid var(--line);background:#fff}
+  .admin-side .nav-tab:hover{transform:none}
+  .admin-side .nav-tab.active::before{display:none}
+  .admin-main{padding:var(--space-4) var(--space-4) 48px}
+}
 @media (max-width:600px){
-  .wrap{padding:14px}
+  .topbar{padding:0 14px;gap:8px}
+  .topbar b{font-size:15px}
+  .topbar .t-right{gap:6px}
+  #who{display:none}
+  .card{padding:16px}
+  .stat-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .post-item{gap:11px;padding:11px 12px}
   .post-item .p-thumb{width:64px;height:64px}
+}
+@media (min-width:1200px){
+  .admin-main{max-width:1280px}
+  .stat-grid{gap:var(--space-4)}
 }
 </style>
 </head>
@@ -129,16 +221,18 @@ tr:last-child td{border-bottom:none}
   </div>
 </header>
 
-<div class="wrap hidden" id="app">
-  <div class="nav-tabs">
-    <button class="nav-tab active" data-v="stats">统计看板</button>
-    <button class="nav-tab" data-v="users">用户列表</button>
-    <button class="nav-tab" data-v="posts">内容管理</button>
-    <button class="nav-tab" data-v="messages">留言管理</button>
-    <button class="nav-tab" data-v="channels">渠道管理</button>
-    <button class="nav-tab" data-v="batch">批量生成</button>
-  </div>
-
+<div class="admin-shell hidden" id="app">
+  <aside class="admin-side">
+    <div class="nav-tabs" id="mainNav">
+      <button class="nav-tab active" data-v="stats"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>统计看板</button>
+      <button class="nav-tab" data-v="users"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>用户列表</button>
+      <button class="nav-tab" data-v="posts"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>内容管理</button>
+      <button class="nav-tab" data-v="messages"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>留言管理</button>
+      <button class="nav-tab" data-v="channels"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>渠道管理</button>
+      <button class="nav-tab" data-v="batch"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>批量生成</button>
+    </div>
+  </aside>
+  <main class="admin-main">
   <div id="view-stats">
     <div class="stat-grid" id="statCards"></div>
     <div class="card">
@@ -261,7 +355,7 @@ tr:last-child td{border-bottom:none}
       <div id="batchResults" style="margin-top:16px"></div>
     </div>
   </div>
-
+  </main>
 </div>
 
 <div class="modal-mask" id="modalMask">
@@ -285,7 +379,7 @@ const $$ = s => Array.from(document.querySelectorAll(s));
 function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2400); }
 function fmtTime(t){ const d=new Date(t); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
-function icon(name,size){ const I={del:'<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>'}; return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(I[name]||"")+"</svg>"; }
+function icon(name,size){ const I={del:'<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>',users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',layers:'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',check:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',x:'<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',sparkle:'<path d="M12 3v18M3 12h18"/><path d="m5 5 14 14M19 5 5 19"/>',img:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',film:'<rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/>',file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',msg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'}; return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(I[name]||"")+"</svg>"; }
 
 async function req(path, opts){
   opts=opts||{};
@@ -496,20 +590,30 @@ async function startBatchGenerate() {
 async function loadStats(){
   try{
     const s=await req("/admin/stats");
+    // statCard(图标名, 数值, 标签, 图标配色class, 数字颜色)
+    const statCard=(ic,num,lbl,cls,color)=>
+      '<div class="stat '+(cls||"")+'">'+
+        '<div class="stat-ic">'+icon(ic,18)+'</div>'+
+        '<div class="num" style="color:'+color+'">'+num+'</div>'+
+        '<div class="lbl">'+lbl+'</div>'+
+      '</div>';
     $("#statCards").innerHTML=
-      '<div class="stat"><div class="num" style="color:var(--primary)">'+s.userCount+'</div><div class="lbl">注册用户</div></div>'+
-      '<div class="stat"><div class="num">'+s.postCount+'</div><div class="lbl">总生成数</div></div>'+
-      '<div class="stat"><div class="num" style="color:var(--green)">'+s.doneCount+'</div><div class="lbl">生成成功</div></div>'+
-      '<div class="stat"><div class="num" style="color:var(--red)">'+s.failCount+'</div><div class="lbl">生成失败</div></div>'+
-      '<div class="stat"><div class="num" style="color:var(--amber)">'+s.pendingCount+'</div><div class="lbl">生成中</div></div>'+
-      '<div class="stat"><div class="num" style="color:var(--blue)">'+s.todayCount+'</div><div class="lbl">今日新增</div></div>';
-    // 类型分布
+      statCard('users',s.userCount,'注册用户','c-primary','var(--primary)')+
+      statCard('layers',s.postCount,'总生成数','','var(--text)')+
+      statCard('check',s.doneCount,'生成成功','c-green','var(--green)')+
+      statCard('x',s.failCount,'生成失败','c-red','var(--red)')+
+      statCard('clock',s.pendingCount,'生成中','c-amber','var(--amber)')+
+      statCard('sparkle',s.todayCount,'今日新增','c-blue','var(--blue)');
+    // 类型分布：[key, 标签, 数字色, 图标配色class, 图标]
     const bt=s.byType;
-    const typeHtml=['text','image','video','drama','post'].map(t=>{
-      const meta={text:["文本","var(--blue)"],image:["图片","var(--purple)"],video:["视频","var(--pink)"],drama:["短剧","var(--orange)"],post:["帖子","var(--green)"]}[t];
-      return '<div class="stat"><div class="num" style="color:'+meta[1]+'">'+(bt[t]||0)+'</div><div class="lbl">'+meta[0]+'作品</div></div>';
-    }).join("");
-    $("#statCards").innerHTML += typeHtml;
+    const TYPES=[
+      ['text','文本作品','var(--blue)','c-blue','file'],
+      ['image','图片作品','var(--purple)','c-purple','img'],
+      ['video','视频作品','var(--pink)','c-pink','film'],
+      ['drama','短剧作品','var(--orange)','c-orange','film'],
+      ['post','帖子作品','var(--green)','c-green','msg']
+    ];
+    $("#statCards").innerHTML += TYPES.map(t=>statCard(t[4],(bt[t[0]]||0),t[1],t[3],t[2])).join("");
     // 趋势
     renderTrend(s.trend);
     // 排行

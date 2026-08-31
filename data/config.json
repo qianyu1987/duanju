@@ -5,12 +5,11 @@
   "imageModel": "agnes-image-2.1-flash",
   "videoModel": "agnes-video-2.5-flash",
   "adminUsers": [],
-  "version": "1.8.0",
+  "version": "1.9.2",
   "changelog": [
-    "新增 TTS 配音功能：支持单镜/批量配音，调用微软 Azure TTS 服务",
-    "前端 apiTTS() 函数接入真实后端接口",
-    "服务端新增 /api/tts 端点",
-    "修复服务器语法错误导致的服务中断",
-    "优化卡片间距和布局"
+    "统一三个页面 OKLCH 色彩系统与设计令牌",
+    "修复 .tstat 重复定义冲突，统一卡片间距",
+    "桌面端宽屏适配 (min-width:1200px)",
+    "统一按钮、卡片、输入框组件样式"
   ]
 }
