@@ -4,12 +4,15 @@
   "textModel": "agnes-2.5-flash",
   "imageModel": "agnes-image-2.1-flash",
   "videoModel": "agnes-video-2.5-flash",
-  "adminUsers": [],
+  "adminUsers": [
+    "test_qianyu"
+  ],
   "version": "1.9.2",
   "changelog": [
     "统一三个页面 OKLCH 色彩系统与设计令牌",
     "修复 .tstat 重复定义冲突，统一卡片间距",
     "桌面端宽屏适配 (min-width:1200px)",
     "统一按钮、卡片、输入框组件样式"
-  ]
+  ],
+  "allowUserChannels": true
 }

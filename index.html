@@ -2215,10 +2215,9 @@ h3.sec:hover::after{width:100%}
               <div class="num" id="profImages">-</div>
               <div class="lbl">图片</div>
             </div>
-              <div class="profile-stat">
-                <div class="num" id="profVideos">-</div>
-                <div class="lbl">视频</div>
-              </div>
+            <div class="profile-stat">
+              <div class="num" id="profVideos">-</div>
+              <div class="lbl">视频</div>
             </div>
           </div>
         </div>
@@ -2543,7 +2542,6 @@ function renderHome() {
   const fail = todays.filter(h => h.status === "failed").length;
   const pend = todays.filter(h => h.status === "pending").length;
   $("#statCards").innerHTML =
-    '<div class="stat-grid">' +
     '<div class="stat-card primary">' +
       '<div class="stat-card-header">' +
         '<div class="stat-card-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>' +
@@ -2571,7 +2569,6 @@ function renderHome() {
       '</div>' +
       '<div class="stat-card-num">' + pend + '</div>' +
       '<div class="stat-card-lbl">生成中</div>' +
-    '</div>' +
     '</div>';
 
   // 加载服务器端每日额度统计和过期提醒
