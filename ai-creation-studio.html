@@ -124,10 +124,11 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .nav-item:hover{background:var(--primary-soft);color:var(--text);padding-left:calc(var(--space-3) + 2px)}
 .nav-item:hover::before{height:60%}
 .nav-item.active{
-  background:linear-gradient(90deg,oklch(var(--primary-ch) / 0.12) 0%,var(--primary-soft) 100%);
-  color:var(--primary);font-weight:700;padding-left:calc(var(--space-3) + 4px);
+  background:linear-gradient(135deg,var(--primary),oklch(62% 0.16 292));
+  color:#fff;font-weight:600;padding-left:calc(var(--space-3) + 4px);
+  box-shadow:0 4px 14px oklch(var(--primary-ch) / .3);
 }
-.nav-item.active::before{height:70%}
+.nav-item.active::before{height:22px;background:linear-gradient(180deg,var(--primary),oklch(66% 0.15 300))}
 .side-foot{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:14px;border-top:1px solid var(--line);margin-top:12px}
 .side-foot .btn{font-size:13px;padding:9px 6px}
 
@@ -155,7 +156,7 @@ h3.sec:before{
 }
 
 /* 按钮 */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:15px;font-weight:600;border-radius:var(--radius);padding:var(--space-4) var(--space-5);min-height:44px;transition:all var(--duration-fast) var(--ease-spring);border:1.5px solid transparent;position:relative;overflow:hidden}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:15px;font-weight:600;border-radius:var(--radius);padding:12px 20px;min-height:44px;transition:all var(--duration-fast) var(--ease-spring);border:1.5px solid transparent;position:relative;overflow:hidden}
 .btn::before{content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:left var(--duration-normal) var(--ease-out)}
 .btn:hover::before{left:100%}
 .btn:active{transform:scale(0.96)}

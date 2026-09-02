@@ -149,11 +149,12 @@ a:hover{text-decoration:underline}
 .nav-item svg{flex-shrink:0;transition:transform var(--duration-fast) var(--ease-out)}
 .nav-item:hover svg{transform:scale(1.1)}
 .nav-item.active{
-  background:linear-gradient(90deg,oklch(var(--primary-ch) / 0.12) 0%,var(--primary-soft) 100%);
-  color:var(--primary);font-weight:700;padding-left:calc(var(--space-3) + 4px);
+  background:linear-gradient(135deg,var(--primary),oklch(62% 0.16 292));
+  color:#fff;font-weight:600;padding-left:calc(var(--space-3) + 4px);
+  box-shadow:0 4px 14px oklch(var(--primary-ch) / .3);
 }
-.nav-item.active::before{height:70%}
-.nav-item.active svg{transform:scale(1.15)}
+.nav-item.active::before{height:22px;background:linear-gradient(180deg,var(--primary),oklch(66% 0.15 300))}
+.nav-item.active svg{transform:scale(1.1)}
 .side-foot{padding-top:var(--space-3);border-top:1px solid var(--line);margin-top:var(--space-3)}
 .userbar{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2);border-radius:var(--radius)}
 .userbar .u-avatar{
@@ -351,7 +352,7 @@ h3.sec:before{
 .btn::before{
   content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;
   background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);
-  transition:left var(--duration-slow) var(--ease-out);
+  transition:left var(--duration-normal) var(--ease-out);
 }
 .btn:hover::before{left:100%}
 .btn:active{transform:scale(0.96)}
@@ -730,19 +731,19 @@ button:disabled{cursor:not-allowed;opacity:0.6}
 .board-input .bi-row{display:flex;gap:var(--space-3)}
 .board-input textarea{flex:1}
 
-/* 登录页 - 全新沉浸式设计 */
+/* 登录页 - 浅紫氛围光（与 admin.html 登录卡统一） */
 .auth-mask{
   position:fixed;inset:0;z-index:100;
-  background:linear-gradient(135deg,#0a0a1a 0%,#1a1a3e 50%,#2d1b69 100%);
+  background:linear-gradient(150deg, oklch(96% 0.03 275), oklch(94% 0.045 305));
   display:flex;align-items:center;justify-content:center;padding:20px;
   overflow:hidden;
 }
 
 /* 主卡片 */
 .auth-card{
-  background:#f4f6f9;
-  border-radius:28px;
-  box-shadow:0 25px 80px rgba(0,0,0,0.5);
+  background:#fff;
+  border-radius:var(--radius-xl);
+  box-shadow:0 20px 60px oklch(0.45 0.15 275 / .18);
   width:100%;max-width:400px;
   padding:var(--space-8) var(--space-6);
   position:relative;z-index:1;
@@ -813,9 +814,9 @@ button:disabled{cursor:not-allowed;opacity:0.6}
 .btn-auth{
   width:100%;padding:18px;font-size:16px;font-weight:700;
   border-radius:14px;margin-top:var(--space-2);
-  background:linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f093fb 100%);
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary2) 100%);
   color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;
-  box-shadow:0 4px 20px rgba(118,75,162,0.35);
+  box-shadow:0 4px 20px oklch(var(--primary-ch) / 0.35);
   transition:all var(--duration-fast) var(--ease-out);
   position:relative;overflow:hidden;
 }
@@ -827,7 +828,7 @@ button:disabled{cursor:not-allowed;opacity:0.6}
 .btn-auth:hover::before{opacity:1}
 .btn-auth:hover{
   transform:translateY(-2px);
-  box-shadow:0 8px 32px rgba(118,75,162,0.45);
+  box-shadow:0 8px 32px oklch(var(--primary-ch) / 0.45);
 }
 .btn-auth:active{transform:translateY(0)}
 .btn-auth svg{transition:transform var(--duration-fast)}
