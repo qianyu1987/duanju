@@ -56,6 +56,8 @@ textarea{resize:vertical;line-height:1.7}
 label{display:block;font-size:13px;color:var(--sub);font-weight:600;margin:0 0 6px}
 ::placeholder{color:var(--muted)}
 .hidden{display:none!important}
+/* 背景氛围光：与 index/admin 统一品牌基调（两枚超大柔和色斑） */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(900px 500px at 8% -8%, oklch(92% 0.06 275 / .5), transparent 60%),radial-gradient(760px 460px at 100% 0%, oklch(93% 0.05 310 / .45), transparent 62%)}
 
 /* 布局 */
 .app{display:flex;min-height:100vh}

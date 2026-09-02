@@ -1128,12 +1128,12 @@ main {animation:pageIn 0.4s var(--ease-out)}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 #tab-home, #tab-text, #tab-image, #tab-video, #tab-drama, #tab-community, #tab-profile {animation:pageIn 0.4s var(--ease-out)}
 
-/* 全局背景微妙纹理 */
+/* 全局背景氛围光：与 admin.html 统一品牌基调（两枚超大柔和色斑） */
 body::before {
   content:"";position:fixed;inset:0;z-index:-1;
   background:
-    radial-gradient(ellipse at 20% 20%, oklch(var(--primary-ch) / 0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, oklch(var(--purple-ch) / 0.03) 0%, transparent 50%);
+    radial-gradient(900px 500px at 8% -8%, oklch(92% 0.06 275 / .5), transparent 60%),
+    radial-gradient(760px 460px at 100% 0%, oklch(93% 0.05 310 / .45), transparent 62%);
   pointer-events:none;
 }
 
@@ -1285,50 +1285,47 @@ h3.sec:hover::after{width:100%}
 
 /* ================= v1.9.0 首页重新设计 ================= */
 
-/* ===== Hero 欢迎区域 v2 ===== */
+/* ===== Hero 欢迎区域 v3 · 浅紫氛围光（与 admin 基调统一） ===== */
 .hero-banner{
   position:relative;
-  background:linear-gradient(135deg, oklch(48% 0.22 275) 0%, oklch(52% 0.2 310) 40%, oklch(58% 0.18 340) 100%);
+  background:linear-gradient(135deg, oklch(97% 0.02 275) 0%, oklch(96% 0.03 300) 55%, oklch(96% 0.035 330) 100%);
+  border:1px solid oklch(var(--primary-ch) / 0.12);
   border-radius:var(--radius-xl);
   padding:var(--space-8) var(--space-7);
   margin-bottom:var(--space-6);
   overflow:hidden;
-  box-shadow:0 12px 48px oklch(var(--primary-ch) / 0.3), 0 4px 12px oklch(0.15 0 0 / 0.1);
-  color:#fff;
+  box-shadow:var(--shadow-sm);
+  color:var(--text);
 }
 .hero-banner::before{
   content:"";position:absolute;inset:0;
   background:
-    radial-gradient(circle at 15% 40%, rgba(255,255,255,0.15) 0%, transparent 45%),
-    radial-gradient(circle at 85% 25%, rgba(255,255,255,0.1) 0%, transparent 35%),
-    radial-gradient(circle at 60% 80%, rgba(255,255,255,0.08) 0%, transparent 40%);
-  pointer-events:none;
-}
-.hero-banner::after{
-  content:"";position:absolute;bottom:0;left:0;right:0;height:50%;
-  background:linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.2) 100%);
+    radial-gradient(circle at 15% 40%, oklch(var(--primary-ch) / 0.05) 0%, transparent 45%),
+    radial-gradient(circle at 85% 25%, oklch(var(--purple-ch) / 0.04) 0%, transparent 35%);
   pointer-events:none;
 }
 .hero-content{position:relative;z-index:1;max-width:560px}
 .hero-greeting{
-  font-size:13px;font-weight:600;opacity:0.95;margin-bottom:var(--space-2);
+  font-size:13px;font-weight:600;color:var(--primary);margin-bottom:var(--space-2);
   letter-spacing:0.8px;text-transform:uppercase;
   display:inline-flex;align-items:center;gap:var(--space-2);
 }
 .hero-greeting::before{
   content:"";width:8px;height:8px;border-radius:50%;
-  background:rgba(255,255,255,0.9);
-  box-shadow:0 0 8px rgba(255,255,255,0.6);
+  background:var(--primary);
+  box-shadow:0 0 8px oklch(var(--primary-ch) / 0.6);
   animation:pulse 2s ease-in-out infinite;
 }
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.7;transform:scale(1.2)}}
 .hero-title{
   font-size:32px;font-weight:800;line-height:1.15;margin-bottom:var(--space-3);
   letter-spacing:-0.8px;
-  text-shadow:0 2px 12px rgba(0,0,0,0.15);
+  background:linear-gradient(135deg,var(--text) 0%,var(--primary) 55%,var(--pink) 100%);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
 }
 .hero-subtitle{
-  font-size:14px;opacity:0.9;line-height:1.7;margin-bottom:var(--space-5);
+  font-size:14px;color:var(--sub);line-height:1.7;margin-bottom:var(--space-5);
   max-width:480px;
 }
 .hero-actions{display:flex;gap:var(--space-3);flex-wrap:wrap}
@@ -1336,24 +1333,23 @@ h3.sec:hover::after{width:100%}
   display:inline-flex;align-items:center;gap:var(--space-2);
   padding:12px 24px;border-radius:var(--radius);
   font-size:15px;font-weight:600;
-  background:rgba(255,255,255,0.12);
-  border:1px solid rgba(255,255,255,0.25);
-  color:#fff;
-  backdrop-filter:blur(12px);
+  background:#fff;
+  border:1.5px solid var(--line);
+  color:var(--text);
   transition:all var(--duration-normal) var(--ease-spring);
   cursor:pointer;
-  box-shadow:0 4px 16px rgba(0,0,0,0.1);
+  box-shadow:var(--shadow-xs);
 }
-.hero-btn:hover{background:rgba(255,255,255,0.22);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.15)}
-.hero-btn-primary{background:#fff;color:var(--primary);border-color:#fff;box-shadow:0 4px 20px rgba(255,255,255,0.3)}
-.hero-btn-primary:hover{background:#fff;box-shadow:0 8px 28px rgba(255,255,255,0.4)}
+.hero-btn:hover{border-color:var(--primary);color:var(--primary);transform:translateY(-3px);box-shadow:var(--shadow-sm)}
+.hero-btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border-color:transparent;box-shadow:0 4px 14px oklch(var(--primary-ch) / 0.3),inset 0 1px 0 rgba(255,255,255,0.2)}
+.hero-btn-primary:hover{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;box-shadow:0 8px 24px oklch(var(--primary-ch) / 0.4)}
 
-/* Hero 装饰粒子 v2 */
+/* Hero 装饰粒子 v3 · 紫调适配浅底 */
 .hero-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0}
 .hero-particle{
   position:absolute;width:6px;height:6px;border-radius:50%;
-  background:rgba(255,255,255,0.25);
-  box-shadow:0 0 12px rgba(255,255,255,0.2);
+  background:oklch(var(--primary-ch) / 0.18);
+  box-shadow:0 0 12px oklch(var(--primary-ch) / 0.2);
   animation:particleFloat 10s ease-in-out infinite;
 }
 @keyframes particleFloat{
