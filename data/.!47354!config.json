@@ -1,0 +1,16 @@
+{
+  "agnesApiKey": "cpk-jE3QzzqNRg5U8mNjABgRiu5i1Ha59bOTuRqvIALl4jqN2LUN",
+  "base": "https://apihub.agnes-ai.com/v1",
+  "textModel": "agnes-2.5-flash",
+  "imageModel": "agnes-image-2.1-flash",
+  "videoModel": "agnes-video-2.5-flash",
+  "adminUsers": [],
+  "version": "1.9.1",
+  "changelog": [
+    "新增 TTS 配音功能：支持单镜/批量配音，调用微软 Azure TTS 服务",
+    "前端 apiTTS() 函数接入真实后端接口",
+    "服务端新增 /api/tts 端点",
+    "修复服务器语法错误导致的服务中断",
+    "优化卡片间距和布局"
+  ]
+}
