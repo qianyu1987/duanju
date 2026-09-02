@@ -7,8 +7,9 @@
   "adminUsers": [
     "test_qianyu"
   ],
-  "version": "1.9.2",
+  "version": "1.10.0",
   "changelog": [
+    "v1.10.0 全站品牌语言统一：修复 108 处 OKLCH token 失效、补齐缺失 token、首页 hero 浅色氛围光重构、按钮/侧栏/卡片/登录弹窗三站对齐、ai-creation-studio.html 纳入部署",
     "统一三个页面 OKLCH 色彩系统与设计令牌",
     "修复 .tstat 重复定义冲突，统一卡片间距",
     "桌面端宽屏适配 (min-width:1200px)",

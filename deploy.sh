@@ -23,7 +23,7 @@ fs.writeFileSync(f,JSON.stringify(c,null,2));
 JSEOF
 
 echo "== [2/4] 上传代码 =="
-scp -q server.js index.html admin.html "$SERVER:$APP/"
+scp -q server.js index.html admin.html ai-creation-studio.html "$SERVER:$APP/"
 scp -q data/config.json data/channels.json data/usage.json "$SERVER:$APP/data/"
 scp -q /tmp/setver.js "$SERVER:/tmp/"
 
